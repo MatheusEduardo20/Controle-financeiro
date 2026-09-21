@@ -1509,6 +1509,27 @@
     100% { width: 100%; }
   }
 
+  /* ---------- TELA DE BLOQUEIO (dados protegidos por senha) ---------- */
+  #app-lock {
+    position: fixed; inset: 0; z-index: 9998;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 24px;
+    background: radial-gradient(circle at 50% 32%, #16324a 0%, #0B1220 68%, #070B12 100%);
+  }
+  #app-lock .lock-icon { font-size: 2.4rem; margin-bottom: 6px; }
+  #app-lock .lock-title {
+    font-family: inherit; font-weight: 700; font-size: 1.1rem; color: #F2F4EF; margin-bottom: 2px;
+  }
+  #app-lock .lock-sub { color: #9AA7B0; font-size: 0.82rem; margin: 0 0 16px; text-align: center; }
+  #app-lock form { width: 100%; max-width: 280px; display: flex; flex-direction: column; }
+  #app-lock input {
+    width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06); color: #F2F4EF; font-family: inherit; font-size: 1rem;
+    text-align: center; letter-spacing: 0.05em;
+  }
+  #app-lock input::placeholder { color: #6B7680; }
+  #app-lock .lock-error { color: #FF8A80; font-size: 0.78rem; min-height: 1.1em; margin-top: 8px; text-align: center; }
+
   .tabbar {
     position: sticky;
     bottom: 0;
@@ -1590,6 +1611,16 @@
   </div>
   <div class="splash-title">Controle Financeiro</div>
   <div class="splash-progress"><div class="splash-progress-fill"></div></div>
+</div>
+<div id="app-lock" style="display:none;">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">Dados protegidos</div>
+  <p class="lock-sub">Digite sua senha para destravar o app.</p>
+  <form id="lock-form" autocomplete="off">
+    <input type="password" id="lock-password-input" placeholder="Senha" autocomplete="current-password" autofocus>
+    <div id="lock-error" class="lock-error"></div>
+    <button type="submit" class="add-btn" style="margin-top:14px;">Destravar</button>
+  </form>
 </div>
 <div class="app">
   <header class="topbar">
@@ -2176,6 +2207,26 @@
       <div id="card-settings-list"></div>
       </div>
       <div class="section-card">
+      <h2 class="section-title" style="margin-top:4px;">Proteger dados com senha</h2>
+      <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 10px;">
+        Ativa criptografia de verdade (AES-256) nos dados salvos neste aparelho e nos backups exportados. Sem a senha, ninguém consegue ler os dados — nem quem tiver acesso aos arquivos do navegador.
+      </p>
+      <div id="encryption-status-off">
+        <input type="password" id="enc-setup-password" placeholder="Crie uma senha" autocomplete="new-password" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:8px;">
+        <input type="password" id="enc-setup-password-confirm" placeholder="Confirme a senha" autocomplete="new-password" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:10px;">
+        <button type="button" class="add-btn" id="enc-enable-btn" style="margin-top:0;">Ativar criptografia</button>
+        <p style="color:var(--muted); font-size:0.74rem; line-height:1.5; margin:8px 0 0;">
+          Guarde essa senha num lugar seguro — se esquecer, não tem como recuperar os dados salvos neste aparelho.
+        </p>
+      </div>
+      <div id="encryption-status-on" style="display:none;">
+        <div style="display:flex; align-items:center; gap:8px; padding:9px 11px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-size:0.82rem; margin-bottom:10px;">
+          🔒 Proteção por senha ativa
+        </div>
+        <button type="button" class="add-btn" id="enc-disable-btn" style="margin-top:0; background:var(--surface-2); color:var(--negative); box-shadow:none;">Desativar proteção</button>
+      </div>
+      </div>
+      <div class="section-card">
       <h2 class="section-title" style="margin-top:4px;">Transferir dados entre aparelhos</h2>
       <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 8px;">
         Esta versão (instalada fora do Claude) guarda os dados só neste aparelho/navegador. Para levar os dados de um aparelho para o outro: exporte um arquivo aqui e importe-o no outro aparelho. Nada é enviado para nenhum servidor — o arquivo fica só com você.
@@ -2595,10 +2646,45 @@
     if (href) openDataUrl(href, link.getAttribute('download'));
   });
 
+  // ---------- CRIPTOGRAFIA (proteção opcional por senha) ----------
+  // AES-GCM 256 bits com a chave derivada da senha via PBKDF2 (210 mil
+  // iterações, SHA-256) — o mesmo tipo de proteção usado por gerenciadores
+  // de senha. A chave só existe na memória enquanto o app está aberto: ela
+  // nunca é salva em lugar nenhum, só é recalculada a partir da senha toda
+  // vez que o app é desbloqueado.
+  let encryptionKey = null;
+  let encryptionSaltB64 = null;
+  let isEncrypted = false;
+  function bufToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+  function b64ToBuf(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
+  async function deriveKeyFromPassword(password, saltBytes) {
+    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: 210000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+  async function encryptPayload(obj, key, saltB64) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const data = new TextEncoder().encode(JSON.stringify(obj));
+    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+    return { enc: true, v: 1, salt: saltB64, iv: bufToB64(iv), data: bufToB64(cipherBuf) };
+  }
+  async function decryptPayload(envelope, password) {
+    const saltBytes = b64ToBuf(envelope.salt);
+    const key = await deriveKeyFromPassword(password, saltBytes);
+    const ivBytes = b64ToBuf(envelope.iv);
+    const cipherBytes = b64ToBuf(envelope.data);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, key, cipherBytes);
+    const obj = JSON.parse(new TextDecoder().decode(plainBuf));
+    return { obj, key };
+  }
+
   let state = { accounts: [], transactions: [], benefitEntries: [], benefitFixedDeposits: {}, goals: [], recurringIncomes: [], recurringExpenses: [], installments: [], cardLoans: [], cardSettings: {}, personLoans: [], lastFlowPayment: 'debito', lastFlowCategory: 'Outros', budgetReferenceValue: 5750, paidCardInvoices: {} };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) state = Object.assign(state, JSON.parse(raw));
+  function normalizeState() {
     if (!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
     if (!Array.isArray(state.recurringExpenses)) state.recurringExpenses = [];
     if (!Array.isArray(state.installments)) state.installments = [];
@@ -2620,6 +2706,22 @@
         typeof entry === 'string' ? { monthKey: entry, installmentIds: [], accountId: null, amount: 0, legacy: true } : entry
       );
     });
+  }
+  let pendingEncryptedEnvelope = null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.enc === true) {
+        // Dados protegidos por senha: não carrega nada ainda — o app fica
+        // trancado até a senha certa ser digitada na tela de bloqueio.
+        pendingEncryptedEnvelope = parsed;
+        isEncrypted = true;
+      } else {
+        state = Object.assign(state, parsed);
+        normalizeState();
+      }
+    }
   } catch (e) { console.warn('Não foi possível carregar dados salvos', e); }
 
   const PRESET_GOALS = [
@@ -2630,6 +2732,13 @@
   ];
 
   function save() {
+    if (isEncrypted && encryptionKey) {
+      encryptPayload(state, encryptionKey, encryptionSaltB64).then(envelope => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope)); }
+        catch (e) { console.warn('Não foi possível salvar', e); }
+      }).catch(e => console.warn('Falha ao criptografar antes de salvar', e));
+      return;
+    }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
     catch (e) { console.warn('Não foi possível salvar', e); }
   }
@@ -6096,9 +6205,14 @@
     }
   }
 
-  if (pwaExportBtn) pwaExportBtn.addEventListener('click', () => {
+  if (pwaExportBtn) pwaExportBtn.addEventListener('click', async () => {
     const payload = { exportedAt: Date.now(), app: 'financas-dashboard', version: APP_VERSION, state };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    let outObj = payload;
+    if (isEncrypted && encryptionKey) {
+      try { outObj = await encryptPayload(payload, encryptionKey, encryptionSaltB64); }
+      catch (e) { showToast('Não foi possível criptografar o backup.', true); return; }
+    }
+    const blob = new Blob([JSON.stringify(outObj, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const stamp = new Date().toISOString().slice(0, 10);
@@ -6110,7 +6224,7 @@
     URL.revokeObjectURL(url);
     try { localStorage.setItem(LAST_EXPORT_KEY, String(Date.now())); } catch (e) {}
     renderExportReminder();
-    showToast('Arquivo baixado. Guarde-o num local seguro.');
+    showToast(isEncrypted ? 'Arquivo criptografado baixado. Guarde-o num local seguro.' : 'Arquivo baixado. Guarde-o num local seguro.');
   });
 
   if (pwaImportBtn) pwaImportBtn.addEventListener('click', () => pwaImportFile.click());
@@ -6119,17 +6233,32 @@
     const file = pwaImportFile.files && pwaImportFile.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const parsed = JSON.parse(reader.result);
-        const incoming = parsed && parsed.state ? parsed.state : parsed;
+        let incoming;
+        if (parsed && parsed.enc === true) {
+          const password = prompt('Este backup está protegido por senha. Digite a senha usada para exportá-lo:');
+          if (!password) { pwaImportFile.value = ''; return; }
+          try {
+            const { obj } = await decryptPayload(parsed, password);
+            incoming = obj && obj.state ? obj.state : obj;
+          } catch (e) {
+            showToast('Senha incorreta ou arquivo corrompido.', true);
+            pwaImportFile.value = '';
+            return;
+          }
+        } else {
+          incoming = parsed && parsed.state ? parsed.state : parsed;
+        }
         if (!incoming || typeof incoming !== 'object' || !Array.isArray(incoming.accounts)) {
           showToast('Arquivo inválido. Selecione um backup exportado por este app.', true);
           return;
         }
         if (!confirm('Importar vai substituir TODOS os dados atuais deste aparelho pelos dados do arquivo. Continuar?')) return;
         state = incoming;
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        normalizeState();
+        save();
         renderAll();
         renderExportReminder();
         showToast('Dados importados com sucesso.');
@@ -6142,6 +6271,84 @@
     reader.readAsText(file);
   });
 
+  // ---------- PROTEGER COM SENHA (criptografia local) ----------
+  const encStatusOff = document.getElementById('encryption-status-off');
+  const encStatusOn = document.getElementById('encryption-status-on');
+  const encEnableBtn = document.getElementById('enc-enable-btn');
+  const encDisableBtn = document.getElementById('enc-disable-btn');
+
+  function renderEncryptionStatus() {
+    if (!encStatusOff || !encStatusOn) return;
+    encStatusOff.style.display = isEncrypted ? 'none' : 'block';
+    encStatusOn.style.display = isEncrypted ? 'block' : 'none';
+  }
+
+  if (encEnableBtn) encEnableBtn.addEventListener('click', async () => {
+    const p1 = document.getElementById('enc-setup-password').value;
+    const p2 = document.getElementById('enc-setup-password-confirm').value;
+    if (!p1 || p1.length < 6) { showToast('Use uma senha com pelo menos 6 caracteres.', true); return; }
+    if (p1 !== p2) { showToast('As senhas digitadas não são iguais.', true); return; }
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const key = await deriveKeyFromPassword(p1, saltBytes);
+    encryptionKey = key;
+    encryptionSaltB64 = bufToB64(saltBytes);
+    isEncrypted = true;
+    save();
+    document.getElementById('enc-setup-password').value = '';
+    document.getElementById('enc-setup-password-confirm').value = '';
+    renderEncryptionStatus();
+    showToast('Proteção por senha ativada.');
+  });
+
+  if (encDisableBtn) encDisableBtn.addEventListener('click', async () => {
+    const password = prompt('Digite sua senha atual para desativar a proteção:');
+    if (!password) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const envelope = JSON.parse(raw);
+      await decryptPayload(envelope, password); // só pra validar a senha
+    } catch (e) {
+      showToast('Senha incorreta.', true);
+      return;
+    }
+    isEncrypted = false;
+    encryptionKey = null;
+    encryptionSaltB64 = null;
+    save();
+    renderEncryptionStatus();
+    showToast('Proteção desativada. Os dados voltaram a ser salvos sem criptografia.');
+  });
+
+  renderEncryptionStatus();
+
+  // ---------- TELA DE BLOQUEIO (destravar dados protegidos) ----------
+  const appLockEl = document.getElementById('app-lock');
+  const lockForm = document.getElementById('lock-form');
+  const lockErrorEl = document.getElementById('lock-error');
+  if (lockForm) lockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('lock-password-input').value;
+    if (!password || !pendingEncryptedEnvelope) return;
+    lockErrorEl.textContent = '';
+    try {
+      const { obj, key } = await decryptPayload(pendingEncryptedEnvelope, password);
+      state = Object.assign(state, obj);
+      normalizeState();
+      encryptionKey = key;
+      encryptionSaltB64 = pendingEncryptedEnvelope.salt;
+      isEncrypted = true;
+      pendingEncryptedEnvelope = null;
+      appLockEl.style.display = 'none';
+      renderAll();
+      renderExportReminder();
+      renderEncryptionStatus();
+    } catch (err) {
+      lockErrorEl.textContent = 'Senha incorreta. Tente de novo.';
+      document.getElementById('lock-password-input').value = '';
+      document.getElementById('lock-password-input').focus();
+    }
+  });
+
   // ---------- PWA: registro do service worker (funciona offline / instalável) ----------
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -6149,15 +6356,24 @@
     });
   }
 
-
-  renderAll();
-  renderExportReminder();
-
-  // Esconde a tela de carregamento (splash) depois que o app já renderizou,
-  // com um tempo mínimo pra animação não "piscar" em telas rápidas.
   const appSplashEl = document.getElementById('app-splash');
-  if (appSplashEl) {
-    setTimeout(() => { appSplashEl.classList.add('hidden'); }, 1200);
+  if (pendingEncryptedEnvelope) {
+    // Dados protegidos: não renderiza nada do app ainda — troca a tela de
+    // carregamento pela tela de bloqueio, que só libera com a senha certa.
+    setTimeout(() => {
+      if (appSplashEl) appSplashEl.classList.add('hidden');
+      if (appLockEl) appLockEl.style.display = 'flex';
+      const input = document.getElementById('lock-password-input');
+      if (input) input.focus();
+    }, 900);
+  } else {
+    renderAll();
+    renderExportReminder();
+    // Esconde a tela de carregamento (splash) depois que o app já renderizou,
+    // com um tempo mínimo pra animação não "piscar" em telas rápidas.
+    if (appSplashEl) {
+      setTimeout(() => { appSplashEl.classList.add('hidden'); }, 1200);
+    }
   }
 })();
 </script>
