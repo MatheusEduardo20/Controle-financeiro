@@ -15,7 +15,17 @@
 <link rel="preload" as="image" href="./splash-coin.png" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- A fonte era carregada com um <link rel="stylesheet"> comum, que trava a
+     primeira pintura da página até o navegador buscar esse arquivo na
+     internet -- e enquanto ele espera, a janela fica com o fundo em branco
+     padrão do navegador, porque nosso CSS preto (lá embaixo) ainda nem foi
+     aplicado. O truque abaixo (media="print" + onload) faz o navegador
+     buscar a fonte em segundo plano, SEM travar a primeira pintura: assim o
+     fundo preto aparece imediatamente, e a fonte troca assim que estiver
+     pronta (o texto só fica visível um instante depois, com a fonte padrão
+     do sistema, o que é imperceptível). -->
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
   :root {
     --bg: #F2F4EF;
@@ -1483,11 +1493,10 @@
     background-image: url('./splash-coin.png');
     background-size: cover;
     background-position: center;
-    box-shadow:
-      inset 0 0 0 2px #fbe6a8,
-      inset 0 0 0 4px #d4af37,
-      inset 0 0 0 6px #6b480f,
-      0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
+    /* A borda dourada agora já vem pronta dentro da própria imagem da
+       moeda, então não desenhamos mais um anel extra por CSS aqui (senão
+       ficariam duas bordas, uma por cima da outra). */
+    box-shadow: 0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
     backface-visibility: hidden;
   }
   /* Espessura real da moeda: as duas faces ficam separadas no eixo da
@@ -2389,7 +2398,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.39.03';
+  const APP_VERSION = '4.41.00';
   const APP_VERSION_DATE = '21/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
