@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Financeiro">
 <link rel="apple-touch-icon" href="./icon-512.png">
 <link rel="icon" href="./icon-512.png">
-<link rel="preload" as="image" href="./splash-coin.png" fetchpriority="high">
+<link rel="preload" as="image" href="./coin-sprite.png" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- A fonte era carregada com um <link rel="stylesheet"> comum, que trava a
@@ -1475,34 +1475,30 @@
   .splash-coin-wrap { }
   .splash-coin {
     position: relative;
-    width: 92px; height: 92px;
+    width: 96px; height: 96px;
   }
-  /* Giro simulado em 2D (achatando a largura e voltando), em vez de girar
-     de verdade em 3D. Um giro 3D "de verdade" precisa que a face vire de
-     costas pra câmera em parte do percurso -- e é exatamente aí que o
-     cifrão sumia (achatava até a borda de lado) e, em alguns celulares, o
-     brilho/sombra das duas faces sobrepostas em ângulo criava aquele
-     borrão preto de formato irregular ao redor da moeda. Encolhendo só a
-     LARGURA (scaleX) e nunca deixando passar de um valor pequeno, a moeda
-     nunca fica de perfil "vazia": o cifrão continua visível (só mais fino)
-     em qualquer ponto do giro, e some o problema do borrão, já que não há
-     mais nada sendo renderizado de lado ou de costas.
-  */
+  /* Giro da moeda por "folha de sprites": 12 fotos reais da mesma moeda
+     em ângulos diferentes (de frente até de perfil), tiradas em sequência
+     e coladas lado a lado numa única imagem (coin-sprite.png). A animação
+     só troca qual pedaço dessa tira aparece na janelinha (feito com
+     steps(), sem transição suave entre uma foto e outra -- é assim que
+     dá pra "folhear" as fotos como quadros de desenho animado). Isso
+     substitui de vez qualquer tentativa de girar de verdade em 3D ou de
+     simular com achatamento: aqui a borda/espessura da moeda, o cifrão e
+     a borda dourada já vêm prontos em cada foto, então não tem ângulo
+     "vazio" nem risco do borrão preto de antes. "alternate" faz ela
+     folhear pra frente (de frente até de perfil) e depois pra trás (de
+     perfil até de frente de novo), num vaivém contínuo. */
   .splash-coin .face {
     position: absolute; inset: 0;
-    border-radius: 50%;
-    background-image: url('./splash-coin.png');
-    background-size: cover;
-    background-position: center;
-    /* A borda dourada já vem pronta dentro da própria imagem da moeda,
-       então não desenhamos nenhum anel extra por CSS aqui. */
-    box-shadow: 0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
-    animation: splash-spin 1.2s ease-in-out infinite;
+    background-image: url('./coin-sprite.png');
+    background-repeat: no-repeat;
+    background-size: 1200% 100%;
+    animation: coin-flip 1.6s steps(11) infinite alternate;
   }
-  @keyframes splash-spin {
-    0%   { transform: scaleX(1); }
-    50%  { transform: scaleX(0.38); }
-    100% { transform: scaleX(1); }
+  @keyframes coin-flip {
+    from { background-position-x: 0%; }
+    to   { background-position-x: 100%; }
   }
   .splash-title {
     font-family: inherit; font-weight: 600; font-size: 1rem; letter-spacing: 0.02em;
@@ -2352,7 +2348,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.41.01';
+  const APP_VERSION = '4.43.00';
   const APP_VERSION_DATE = '21/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
