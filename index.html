@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Financeiro">
 <link rel="apple-touch-icon" href="./icon-512.png">
 <link rel="icon" href="./icon-512.png">
+<link rel="preload" as="image" href="./splash-coin.png" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1470,7 +1471,11 @@
     background-image: url('./splash-coin.png');
     background-size: cover;
     background-position: center;
-    box-shadow: 0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
+    box-shadow:
+      inset 0 0 0 2px #fbe6a8,
+      inset 0 0 0 4px #d4af37,
+      inset 0 0 0 6px #6b480f,
+      0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
     backface-visibility: hidden;
   }
   /* Espessura real da moeda: as duas faces ficam separadas no eixo da

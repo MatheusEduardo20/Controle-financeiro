@@ -6,7 +6,7 @@
 // Sempre que o app for atualizado de novo, mude o número da versão abaixo
 // (v2 -> v3 -> v4...) para forçar todos os aparelhos a baixarem a versão nova
 // em vez de continuar mostrando uma cópia antiga guardada no celular.
-const CACHE_NAME = 'financas-app-v7';
+const CACHE_NAME = 'financas-app-v8';
 const ASSETS = [
   './',
   './index.html',
