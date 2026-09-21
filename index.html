@@ -78,7 +78,12 @@
   }
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
+    /* Fundo sempre preto (fixo, não segue --bg) -- é o que aparece por
+       trás/ao redor do cartão do app e no instante de abrir ou fechar o
+       aplicativo (antes do conteúdo pintar, ou na miniatura do app ao
+       trocar de aplicativo no celular). Fica preto mesmo no tema claro,
+       em vez de piscar um cinza-claro nesses momentos. */
+    background: #000000;
     color: var(--ink);
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -1463,6 +1468,13 @@
     width: 92px; height: 92px;
     transform-style: preserve-3d;
     animation: splash-spin 2.4s linear infinite;
+    /* Começa a animação já "adiantada" meio ciclo (em vez de do zero): sem
+       isso, o primeiro quadro mostrado é bem no ângulo em que a moeda fica
+       de lado (só a borda fina, sem a face visível) -- daí a sensação de
+       "aparece preto" assim que a splash abre. Com o atraso negativo, o
+       primeiro quadro já entra direto numa vista de frente, com o cifrão
+       visível, e o giro continua normalmente a partir daí. */
+    animation-delay: -0.5s;
   }
   .splash-coin .face {
     position: absolute; inset: 0;
@@ -2377,8 +2389,8 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.38';
-  const APP_VERSION_DATE = '20/09/2026';
+  const APP_VERSION = '4.39.02';
+  const APP_VERSION_DATE = '21/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
     if (el) el.textContent = 'Versão ' + APP_VERSION + ' · atualizado em ' + APP_VERSION_DATE + '. Se essa versão estiver desatualizada em relação à conversa com o Claude, feche a aba e abra o link de novo.';
