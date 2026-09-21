@@ -1446,6 +1446,66 @@
   }
   table.preview-table th { color: var(--muted); font-weight: 500; }
   table.preview-table tr:last-child td { border-bottom: none; }
+
+  /* ---------- SPLASH / TELA DE CARREGAMENTO ---------- */
+  #app-splash {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px;
+    background: radial-gradient(circle at 50% 38%, #16324a 0%, #0B1220 68%, #070B12 100%);
+    transition: opacity 480ms ease, visibility 480ms ease;
+  }
+  #app-splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .splash-coin-wrap { perspective: 700px; }
+  .splash-coin {
+    position: relative;
+    width: 76px; height: 76px;
+    transform-style: preserve-3d;
+    animation: splash-spin 1.6s linear infinite;
+  }
+  .splash-coin .face {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7C4DFF, #00E5FF);
+    color: #06090C;
+    font-family: inherit; font-weight: 800; font-size: 1.55rem;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.45), 0 0 40px rgba(124, 77, 255, 0.3);
+    backface-visibility: hidden;
+  }
+  .splash-coin .face.back { transform: rotateY(180deg); }
+  .splash-coin .edge {
+    position: absolute; inset: 0; border-radius: 50%;
+    transform: translateZ(-1px);
+    background: linear-gradient(135deg, #4A2FB0, #007A8C);
+    filter: blur(1px);
+  }
+  @keyframes splash-spin {
+    from { transform: rotateY(0deg) rotateX(8deg); }
+    to   { transform: rotateY(360deg) rotateX(8deg); }
+  }
+  .splash-title {
+    font-family: inherit; font-weight: 600; font-size: 1rem; letter-spacing: 0.02em;
+    background: linear-gradient(100deg, #B388FF, #7C4DFF 40%, #00E5FF 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .splash-progress {
+    width: 160px; height: 4px; border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+  }
+  .splash-progress-fill {
+    height: 100%; width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7C4DFF, #00E5FF);
+    animation: splash-progress 1.3s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  @keyframes splash-progress {
+    0% { width: 0%; }
+    70% { width: 88%; }
+    100% { width: 100%; }
+  }
+
   .tabbar {
     position: sticky;
     bottom: 0;
@@ -1465,12 +1525,13 @@
   }
   .tab-btn {
     flex: 1;
-    padding: 13px 0 11px;
+    padding: 17px 2px 15px;
+    min-height: 52px;
     background: none;
     border: none;
     color: var(--muted);
     font-family: inherit;
-    font-size: 0.76rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     border-top: 2px solid transparent;
@@ -1516,6 +1577,17 @@
 </style>
 </head>
 <body>
+<div id="app-splash">
+  <div class="splash-coin-wrap">
+    <div class="splash-coin">
+      <div class="face front">R$</div>
+      <div class="face back">R$</div>
+      <div class="edge"></div>
+    </div>
+  </div>
+  <div class="splash-title">Controle Financeiro</div>
+  <div class="splash-progress"><div class="splash-progress-fill"></div></div>
+</div>
 <div class="app">
   <header class="topbar">
     <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -2207,7 +2279,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.36';
+  const APP_VERSION = '4.37';
   const APP_VERSION_DATE = '20/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -6049,7 +6121,15 @@
     });
   }
 
+
   renderAll();
+
+  // Esconde a tela de carregamento (splash) depois que o app já renderizou,
+  // com um tempo mínimo pra animação não "piscar" em telas rápidas.
+  const appSplashEl = document.getElementById('app-splash');
+  if (appSplashEl) {
+    setTimeout(() => { appSplashEl.classList.add('hidden'); }, 1200);
+  }
 })();
 </script>
 </body>
