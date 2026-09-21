@@ -1490,7 +1490,10 @@
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
   }
   .splash-progress {
-    width: 160px; height: 4px; border-radius: 999px;
+    position: absolute;
+    left: 18%; right: 18%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+    height: 4px; border-radius: 999px;
     background: rgba(255,255,255,0.12);
     overflow: hidden;
   }
@@ -2177,6 +2180,7 @@
       <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 8px;">
         Esta versão (instalada fora do Claude) guarda os dados só neste aparelho/navegador. Para levar os dados de um aparelho para o outro: exporte um arquivo aqui e importe-o no outro aparelho. Nada é enviado para nenhum servidor — o arquivo fica só com você.
       </p>
+      <div id="export-reminder-banner" style="display:none; padding:9px 11px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-size:0.78rem; line-height:1.4; margin-bottom:10px;"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="add-btn" id="pwa-export-btn" style="margin-top:0; flex:1;">Exportar dados (baixar arquivo)</button>
         <button type="button" class="add-btn" id="pwa-import-btn" style="margin-top:0; flex:1; background:var(--surface-2); color:var(--ink); box-shadow:none;">Importar dados (de um arquivo)</button>
@@ -2279,7 +2283,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.37';
+  const APP_VERSION = '4.38';
   const APP_VERSION_DATE = '20/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -6063,13 +6067,34 @@
   });
 
   // ---------- EXPORTAR / IMPORTAR (versão standalone, fora do Claude) ----------
-  // Esta versão não tem nuvem própria: tudo fica só no localStorage deste
-  // navegador. Pra levar os dados a outro aparelho, exporta-se um arquivo
-  // .json (baixado no próprio aparelho, nunca enviado a nenhum servidor) e
-  // importa-se esse mesmo arquivo no outro aparelho.
   const pwaExportBtn = document.getElementById('pwa-export-btn');
   const pwaImportBtn = document.getElementById('pwa-import-btn');
   const pwaImportFile = document.getElementById('pwa-import-file');
+
+  // Lembrete de backup: guarda a data do último "Exportar dados" e avisa,
+  // na aba Dados, quando já faz um tempo (7 dias) desde a última exportação.
+  // É só um aviso — não salva nada sozinho (o navegador não deixa), mas
+  // ajuda a não esquecer.
+  const LAST_EXPORT_KEY = 'financas-last-export';
+  const EXPORT_REMINDER_DAYS = 7;
+  function renderExportReminder() {
+    const banner = document.getElementById('export-reminder-banner');
+    if (!banner) return;
+    let lastExport = null;
+    try { lastExport = localStorage.getItem(LAST_EXPORT_KEY); } catch (e) {}
+    const hasAnyData = state.accounts && state.accounts.length > 0;
+    if (!hasAnyData) { banner.style.display = 'none'; return; }
+    const daysSince = lastExport ? Math.floor((Date.now() - Number(lastExport)) / 86400000) : null;
+    if (daysSince === null) {
+      banner.style.display = 'block';
+      banner.textContent = 'Você ainda não exportou um backup dos seus dados. Recomendo fazer isso agora.';
+    } else if (daysSince >= EXPORT_REMINDER_DAYS) {
+      banner.style.display = 'block';
+      banner.textContent = `Já fazem ${daysSince} dias desde seu último backup exportado. Que tal exportar um novo agora?`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
 
   if (pwaExportBtn) pwaExportBtn.addEventListener('click', () => {
     const payload = { exportedAt: Date.now(), app: 'financas-dashboard', version: APP_VERSION, state };
@@ -6083,6 +6108,8 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    try { localStorage.setItem(LAST_EXPORT_KEY, String(Date.now())); } catch (e) {}
+    renderExportReminder();
     showToast('Arquivo baixado. Guarde-o num local seguro.');
   });
 
@@ -6104,6 +6131,7 @@
         state = incoming;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
         renderAll();
+        renderExportReminder();
         showToast('Dados importados com sucesso.');
       } catch (e) {
         showToast('Não foi possível ler esse arquivo.', true);
@@ -6123,6 +6151,7 @@
 
 
   renderAll();
+  renderExportReminder();
 
   // Esconde a tela de carregamento (splash) depois que o app já renderizou,
   // com um tempo mínimo pra animação não "piscar" em telas rápidas.
