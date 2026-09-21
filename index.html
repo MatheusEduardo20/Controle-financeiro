@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" style="background:#000000">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -1472,54 +1472,37 @@
     transition: opacity 480ms ease, visibility 480ms ease;
   }
   #app-splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-  .splash-coin-wrap { perspective: 700px; }
+  .splash-coin-wrap { }
   .splash-coin {
     position: relative;
     width: 92px; height: 92px;
-    transform-style: preserve-3d;
-    animation: splash-spin 2.4s linear infinite;
-    /* Começa a animação já "adiantada" meio ciclo (em vez de do zero): sem
-       isso, o primeiro quadro mostrado é bem no ângulo em que a moeda fica
-       de lado (só a borda fina, sem a face visível) -- daí a sensação de
-       "aparece preto" assim que a splash abre. Com o atraso negativo, o
-       primeiro quadro já entra direto numa vista de frente, com o cifrão
-       visível, e o giro continua normalmente a partir daí. */
-    animation-delay: -0.5s;
   }
+  /* Giro simulado em 2D (achatando a largura e voltando), em vez de girar
+     de verdade em 3D. Um giro 3D "de verdade" precisa que a face vire de
+     costas pra câmera em parte do percurso -- e é exatamente aí que o
+     cifrão sumia (achatava até a borda de lado) e, em alguns celulares, o
+     brilho/sombra das duas faces sobrepostas em ângulo criava aquele
+     borrão preto de formato irregular ao redor da moeda. Encolhendo só a
+     LARGURA (scaleX) e nunca deixando passar de um valor pequeno, a moeda
+     nunca fica de perfil "vazia": o cifrão continua visível (só mais fino)
+     em qualquer ponto do giro, e some o problema do borrão, já que não há
+     mais nada sendo renderizado de lado ou de costas.
+  */
   .splash-coin .face {
     position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
     background-image: url('./splash-coin.png');
     background-size: cover;
     background-position: center;
-    /* A borda dourada agora já vem pronta dentro da própria imagem da
-       moeda, então não desenhamos mais um anel extra por CSS aqui (senão
-       ficariam duas bordas, uma por cima da outra). */
+    /* A borda dourada já vem pronta dentro da própria imagem da moeda,
+       então não desenhamos nenhum anel extra por CSS aqui. */
     box-shadow: 0 0 24px rgba(212, 175, 55, 0.45), 0 0 40px rgba(212, 175, 55, 0.3);
-    backface-visibility: hidden;
-  }
-  /* Espessura real da moeda: as duas faces ficam separadas no eixo da
-     "espessura" para que a borda (gerada via JS logo abaixo) apareça como
-     um cilindro dourado visível quando a moeda gira de lado. */
-  .splash-coin .face.front { transform: rotateX(90deg) translateZ(7px); }
-  .splash-coin .face.back  { transform: rotateX(90deg) rotateZ(180deg) translateZ(-7px); }
-  .splash-coin-edge {
-    position: absolute; inset: 0;
-    transform-style: preserve-3d;
-    pointer-events: none;
-  }
-  .splash-coin-edge .seg {
-    position: absolute;
-    left: 50%; top: 50%;
-    height: 14px;
-    margin-top: -7px;
-    background: linear-gradient(180deg, #fbe6a8 0%, #e7c465 18%, #d4af37 38%, #a9781f 62%, #6b480f 85%, #3f2a08 100%);
-    backface-visibility: hidden;
+    animation: splash-spin 1.2s ease-in-out infinite;
   }
   @keyframes splash-spin {
-    from { transform: rotateY(0deg) rotateX(78deg); }
-    to   { transform: rotateY(360deg) rotateX(78deg); }
+    0%   { transform: scaleX(1); }
+    50%  { transform: scaleX(0.38); }
+    100% { transform: scaleX(1); }
   }
   .splash-title {
     font-family: inherit; font-weight: 600; font-size: 1rem; letter-spacing: 0.02em;
@@ -1641,41 +1624,12 @@
 <div id="app-splash">
   <div class="splash-coin-wrap">
     <div class="splash-coin" id="splash-coin">
-      <div class="face front"></div>
-      <div class="face back"></div>
-      <div class="splash-coin-edge" id="splash-coin-edge"></div>
+      <div class="face"></div>
     </div>
   </div>
   <div class="splash-title">Controle Financeiro</div>
   <div class="splash-progress"><div class="splash-progress-fill"></div></div>
 </div>
-<script>
-  // Monta a borda cilíndrica da moeda 3D: várias tirinhas douradas dispostas
-  // em círculo (uma "cerca" ao redor do disco), cada uma virada para fora
-  // via rotateY + translateZ. É isso que faz a moeda parecer ter espessura
-  // de verdade e girar como uma moeda de fato, em vez de um círculo achatado.
-  (function buildSplashCoinEdge() {
-    var edge = document.getElementById('splash-coin-edge');
-    if (!edge) return;
-    var SEGMENTS = 48;
-    var RADIUS = 46; // metade da largura/altura da moeda (92px)
-    var segWidth = (2 * RADIUS * Math.sin(Math.PI / SEGMENTS)) + 0.6;
-    var frag = document.createDocumentFragment();
-    for (var i = 0; i < SEGMENTS; i++) {
-      var angle = (360 / SEGMENTS) * i;
-      var seg = document.createElement('div');
-      seg.className = 'seg';
-      seg.style.width = segWidth + 'px';
-      seg.style.marginLeft = (-segWidth / 2) + 'px';
-      seg.style.transform = 'rotateY(' + angle + 'deg) translateZ(' + RADIUS + 'px)';
-      // leve variação de brilho entre as tirinhas simula o serrilhado
-      // (reeding) da borda de uma moeda real.
-      if (i % 2 === 0) seg.style.filter = 'brightness(0.88)';
-      frag.appendChild(seg);
-    }
-    edge.appendChild(frag);
-  })();
-</script>
 <div id="app-lock" style="display:none;">
   <div class="lock-icon">🔒</div>
   <div class="lock-title">Dados protegidos</div>
@@ -2398,7 +2352,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.41.00';
+  const APP_VERSION = '4.41.01';
   const APP_VERSION_DATE = '21/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
