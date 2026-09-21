@@ -2389,7 +2389,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.39.02';
+  const APP_VERSION = '4.39.03';
   const APP_VERSION_DATE = '21/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -6405,9 +6405,36 @@
   });
 
   // ---------- PWA: registro do service worker (funciona offline / instalável) ----------
+  // Por padrão, o navegador só verifica se existe uma versão nova do
+  // service-worker.js de vez em quando (até 24h entre checagens) e, mesmo
+  // achando uma versão nova, o app instalado na área de trabalho continua
+  // rodando a versão antiga (já carregada na memória) até ser fechado de
+  // verdade e reaberto -- e como normalmente a gente só minimiza/troca de
+  // janela em vez de fechar, na prática ele nunca atualizava sozinho.
+  // Por isso: 1) força uma checagem de atualização toda vez que o app abre
+  // e toda vez que ele volta a ficar em primeiro plano; 2) assim que uma
+  // versão nova assume o controle, recarrega a página sozinho, sem precisar
+  // desinstalar e instalar de novo.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+      navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+        .then((reg) => {
+          reg.update().catch(() => {});
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') reg.update().catch(() => {});
+          });
+        })
+        .catch(() => {});
+    });
+
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Dispara quando o novo service worker (versão nova) assume o
+      // controle da página -- é o sinal de que já tem versão nova pronta,
+      // então recarrega pra carregar o HTML/JS/imagens atualizados.
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
     });
   }
 
