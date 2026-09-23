@@ -6,7 +6,7 @@
 // Sempre que o app for atualizado de novo, mude o número da versão abaixo
 // (v2 -> v3 -> v4...) para forçar todos os aparelhos a baixarem a versão nova
 // em vez de continuar mostrando uma cópia antiga guardada no celular.
-const CACHE_NAME = 'financas-app-v16';
+const CACHE_NAME = 'financas-app-v23';
 const ASSETS = [
   './',
   './index.html',
@@ -15,7 +15,8 @@ const ASSETS = [
   './icon-512.png',
   './icon-192-maskable.png',
   './icon-512-maskable.png',
-  './coin-sprite.png'
+  './three.min.js',
+  './coin-face.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -12,7 +12,8 @@
 <meta name="apple-mobile-web-app-title" content="Financeiro">
 <link rel="apple-touch-icon" href="./icon-512.png">
 <link rel="icon" href="./icon-512.png">
-<link rel="preload" as="image" href="./coin-sprite.png" fetchpriority="high">
+<link rel="preload" as="image" href="./coin-face.png" fetchpriority="high">
+<link rel="preload" as="script" href="./three.min.js" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- A fonte era carregada com um <link rel="stylesheet"> comum, que trava a
@@ -1472,37 +1473,38 @@
     transition: opacity 480ms ease, visibility 480ms ease;
   }
   #app-splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-  .splash-coin-wrap { }
-  .splash-coin {
+  /* Moeda 3D de verdade, renderizada com WebGL (Three.js): é um sólido
+     (cilindro) com volume real girando no espaço, não uma imagem plana
+     nem uma folha de fotos. Por ser um objeto sólido com as duas faces
+     e a borda lateral sempre modeladas, nunca existe ângulo "vazio" ou
+     escuro -- sempre tem alguma superfície iluminada virada pra câmera.
+     O <canvas> é onde o Three.js desenha; o reflexo embaixo é desenhado
+     dentro da própria cena 3D (não é CSS). Se o aparelho não suportar
+     WebGL, a imagem estática de fallback (coin-face.png) aparece no lugar. */
+  .splash-coin-wrap {
     position: relative;
-    width: 96px; height: 96px;
+    width: 220px; height: 220px;
+    display: flex; align-items: center; justify-content: center;
   }
-  /* Giro da moeda por "folha de sprites": 12 fotos reais da mesma moeda
-     em ângulos diferentes (de frente até de perfil), tiradas em sequência
-     e coladas lado a lado numa única imagem (coin-sprite.png). A animação
-     só troca qual pedaço dessa tira aparece na janelinha (feito com
-     steps(), sem transição suave entre uma foto e outra -- é assim que
-     dá pra "folhear" as fotos como quadros de desenho animado). Isso
-     substitui de vez qualquer tentativa de girar de verdade em 3D ou de
-     simular com achatamento: aqui a borda/espessura da moeda, o cifrão e
-     a borda dourada já vêm prontos em cada foto, então não tem ângulo
-     "vazio" nem risco do borrão preto de antes. "alternate" faz ela
-     folhear pra frente (de frente até de perfil) e depois pra trás (de
-     perfil até de frente de novo), num vaivém contínuo. */
-  .splash-coin .face {
+  #splash-coin-canvas {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .splash-coin-fallback {
     position: absolute; inset: 0;
-    background-image: url('./coin-sprite.png');
-    background-repeat: no-repeat;
-    background-size: 1200% 100%;
-    animation: coin-flip 1.6s steps(11) infinite alternate;
+    display: none;
+    align-items: center; justify-content: center;
   }
-  @keyframes coin-flip {
-    from { background-position-x: 0%; }
-    to   { background-position-x: 100%; }
+  .splash-coin-fallback img {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
   }
+  .splash-coin-wrap.no-webgl #splash-coin-canvas { display: none; }
+  .splash-coin-wrap.no-webgl .splash-coin-fallback { display: flex; }
   .splash-title {
     font-family: inherit; font-weight: 600; font-size: 1rem; letter-spacing: 0.02em;
-    background: linear-gradient(100deg, #B388FF, #7C4DFF 40%, #00E5FF 100%);
+    background: linear-gradient(100deg, #8a6416, #d9ae58 50%, #f2cf8a 100%);
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
   }
   .splash-progress {
@@ -1511,18 +1513,43 @@
     bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
     height: 4px; border-radius: 999px;
     background: rgba(255,255,255,0.12);
-    overflow: hidden;
+    /* "visible" (em vez de "hidden") pra deixar as moedinhas saltando
+       aparecerem por cima da barra, sem serem cortadas. */
+    overflow: visible;
   }
   .splash-progress-fill {
     height: 100%; width: 0%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #7C4DFF, #00E5FF);
-    animation: splash-progress 1.3s cubic-bezier(0.4,0,0.2,1) forwards;
+    /* Cor da barra = paleta da própria moeda (dourado), em vez do roxo/ciano
+       de antes. */
+    background: linear-gradient(90deg, #8a6416, #d9ae58 55%, #f2cf8a 100%);
+    /* O preenchimento (width) é calculado e atualizado direto por
+       JavaScript, junto com o giro da moeda (ver script no fim do body) --
+       em vez de uma animação de CSS, que nesse tipo de tela pode "perder
+       o compasso" enquanto o aparelho ainda está montando a cena 3D nos
+       bastidores. Assim a barra só começa a andar quando a moeda já
+       estiver pronta, e anda no ritmo real do relógio, sem saltos. */
   }
-  @keyframes splash-progress {
-    0% { width: 0%; }
-    70% { width: 88%; }
-    100% { width: 100%; }
+  /* Uma única moedinha girando dentro da própria barra, acompanhando o
+     preenchimento -- a posição "left" dela é atualizada pelo mesmo código
+     JavaScript que preenche a barra (mais abaixo), então ela sempre fica
+     bem em cima da ponta que está enchendo. O giro é o clássico truque
+     de "achatar" (scaleX), como uma moeda rodando vista de lado. */
+  .splash-coin-dots {
+    position: absolute;
+    left: 0%;
+    top: 50%;
+    width: 13px; height: 13px;
+    margin-top: -6.5px;
+    margin-left: -6.5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff3d0, #d9ae58 45%, #8a6416 100%);
+    box-shadow: 0 0 6px rgba(217,174,88,0.6);
+    animation: splash-coin-spin 0.9s ease-in-out infinite;
+  }
+  @keyframes splash-coin-spin {
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(0.12); }
   }
 
   /* ---------- TELA DE BLOQUEIO (dados protegidos por senha) ---------- */
@@ -1618,13 +1645,15 @@
 </head>
 <body>
 <div id="app-splash">
-  <div class="splash-coin-wrap">
-    <div class="splash-coin" id="splash-coin">
-      <div class="face"></div>
-    </div>
+  <div class="splash-coin-wrap" id="splash-coin-wrap">
+    <canvas id="splash-coin-canvas"></canvas>
+    <div class="splash-coin-fallback"><img src="./coin-face.png" alt="Moeda"></div>
   </div>
   <div class="splash-title">Controle Financeiro</div>
-  <div class="splash-progress"><div class="splash-progress-fill"></div></div>
+  <div class="splash-progress">
+    <div class="splash-coin-dots"></div>
+    <div class="splash-progress-fill"></div>
+  </div>
 </div>
 <div id="app-lock" style="display:none;">
   <div class="lock-icon">🔒</div>
@@ -2348,8 +2377,8 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.43.00';
-  const APP_VERSION_DATE = '21/09/2026';
+  const APP_VERSION = '4.50.00';
+  const APP_VERSION_DATE = '22/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
     if (el) el.textContent = 'Versão ' + APP_VERSION + ' · atualizado em ' + APP_VERSION_DATE + '. Se essa versão estiver desatualizada em relação à conversa com o Claude, feche a aba e abra o link de novo.';
@@ -6406,15 +6435,481 @@
       if (appLockEl) appLockEl.style.display = 'flex';
       const input = document.getElementById('lock-password-input');
       if (input) input.focus();
-    }, 900);
+    }, 3800);
   } else {
     renderAll();
     renderExportReminder();
     // Esconde a tela de carregamento (splash) depois que o app já renderizou,
-    // com um tempo mínimo pra animação não "piscar" em telas rápidas.
+    // com um tempo mínimo pra dar tempo de ver a moeda girando (dobrado de
+    // novo a pedido: era 1200ms, depois 2600ms, agora 5200ms).
     if (appSplashEl) {
-      setTimeout(() => { appSplashEl.classList.add('hidden'); }, 1200);
+      setTimeout(() => { appSplashEl.classList.add('hidden'); }, 5200);
     }
+  }
+})();
+</script>
+<script src="./three.min.js"></script>
+<script>
+// ---------- MOEDA 3D DA TELA DE ABERTURA (Three.js / WebGL) ----------
+// Esta é a moeda modelada à mão em 3D que você mandou (o arquivo de
+// referência "Moeda Dourada Splash"): nada de foto colada num cilindro --
+// aqui a borda, o aro, a serrilha e o "$" são todos sólidos de verdade,
+// esculpidos por código (um "lathe" -- perfil girado 360° -- pro aro, e
+// formas extrudadas com bisel pro cifrão), com o mesmo material metálico,
+// iluminação e ambiente de estúdio do arquivo original. Por serem sólidos
+// reais, nunca existe ângulo vazio ou preto -- sempre tem alguma face
+// iluminada virada pra câmera. Aqui na tela de abertura ela só gira sozinha
+// sem parar (sem os botões/arraste da versão de demonstração, que fazem
+// sentido numa página cheia, mas não numa telinha de carregamento). Se o
+// aparelho não conseguir rodar WebGL, a gente mostra a foto parada da moeda
+// no lugar, pra nunca deixar a tela de abertura quebrada.
+(function () {
+  var wrap = document.getElementById('splash-coin-wrap');
+  var canvas = document.getElementById('splash-coin-canvas');
+  if (!wrap || !canvas) return;
+
+  function useFallback() {
+    wrap.classList.add('no-webgl');
+    startProgressAnimations();
+  }
+
+  // A barra dourada e as moedinhas que viajam com ela só começam a andar
+  // daqui pra frente -- ou assim que a moeda 3D estiver pronta pra girar,
+  // ou (se o WebGL falhar) assim que a imagem estática de reserva
+  // aparecer. O preenchimento é calculado a cada quadro com base no
+  // relógio real (performance.now()), em vez de uma animação de CSS --
+  // assim a barra nunca "perde tempo" enquanto o aparelho ainda está
+  // montando a cena 3D nos bastidores, e sempre anda no ritmo certo a
+  // partir do momento em que a moeda aparece.
+  var progressStarted = false;
+  function startProgressAnimations() {
+    if (progressStarted) return;
+    progressStarted = true;
+    var fill = document.querySelector('.splash-progress-fill');
+    var dots = document.querySelector('.splash-coin-dots');
+    if (!fill && !dots) return;
+    var DURATION_MS = 5600;
+    var t0 = performance.now();
+    function frame() {
+      var t = Math.min((performance.now() - t0) / DURATION_MS, 1);
+      var pct = t <= 0.7 ? (t / 0.7) * 88 : 88 + ((t - 0.7) / 0.3) * 12;
+      if (fill) fill.style.width = pct.toFixed(2) + '%';
+      if (dots) dots.style.left = pct.toFixed(2) + '%';
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if (!window.THREE) { useFallback(); return; }
+
+  try {
+    var reduceMotion = false;
+    try { reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+    var renderer = null;
+    var rendererOpts = [
+      { antialias: true, alpha: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false },
+      { antialias: false, alpha: true, powerPreference: 'default', failIfMajorPerformanceCaveat: false },
+      { antialias: false, alpha: false, failIfMajorPerformanceCaveat: false }
+    ];
+    for (var ri = 0; ri < rendererOpts.length && !renderer; ri++) {
+      try {
+        var opts = rendererOpts[ri];
+        opts.canvas = canvas;
+        renderer = new THREE.WebGLRenderer(opts);
+      } catch (e) { renderer = null; }
+    }
+    if (!renderer) { useFallback(); return; }
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    if ('outputColorSpace' in renderer) { renderer.outputColorSpace = THREE.SRGBColorSpace; }
+    else if ('outputEncoding' in renderer) { renderer.outputEncoding = THREE.sRGBEncoding; }
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.72;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor(0x000000, 0);
+
+    var scene = new THREE.Scene();
+
+    var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0, 7.2);
+    camera.lookAt(0, 0, 0);
+
+    // ---------- ambiente de estúdio procedural (pra dar reflexo realista no metal) ----------
+    function buildEnvironment() {
+      var envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x08070a);
+
+      function panel(w, h, color, x, y, z, ry, intensity) {
+        var m = new THREE.Mesh(
+          new THREE.PlaneGeometry(w, h),
+          new THREE.MeshBasicMaterial({ color: color })
+        );
+        m.material.color.multiplyScalar(intensity);
+        m.position.set(x, y, z);
+        m.rotation.y = ry;
+        envScene.add(m);
+        return m;
+      }
+
+      panel(9, 5, 0xffb347, 0, 9, 0, 0, 1.1).rotation.x = Math.PI / 2;
+      panel(6, 10, 0xff9d3d, 8, 3, 2, -Math.PI / 3.1, 0.55);
+      panel(5, 9, 0xe8790a, -8, 1, -3, Math.PI / 2.6, 0.6);
+      panel(10, 4, 0xff9d3d, 0, -6, 3, 0, 0.25).rotation.x = -Math.PI / 2;
+
+      var pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      var rt = pmrem.fromScene(envScene, 0.035, 0.1, 100);
+      pmrem.dispose();
+      renderer.setRenderTarget(null);
+      return rt.texture;
+    }
+    scene.environment = buildEnvironment();
+
+    // ---------- luzes ----------
+    var hemi = new THREE.HemisphereLight(0x2a2620, 0x000000, 0.5);
+    scene.add(hemi);
+
+    var key = new THREE.DirectionalLight(0xffe9b8, 1.4);
+    key.position.set(-3.6, 4.8, 5.2);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 6;
+    key.shadow.camera.near = 1;
+    key.shadow.camera.far = 20;
+    key.shadow.bias = -0.0015;
+    scene.add(key);
+
+    var fill = new THREE.DirectionalLight(0xffcf8f, 0.15);
+    fill.position.set(4.5, -1, 3);
+    scene.add(fill);
+
+    var rim = new THREE.PointLight(0xff9d3d, 0.5, 14, 2);
+    rim.position.set(2.6, -2.4, -3.2);
+    scene.add(rim);
+
+    var kick = new THREE.PointLight(0xffedc4, 0.25, 12, 2);
+    kick.position.set(0, 0, 4.5);
+    scene.add(kick);
+
+    // ---------- grupo do mundo / da moeda ----------
+    var world = new THREE.Group();
+    world.rotation.x = -0.05;
+    scene.add(world);
+
+    var coin = new THREE.Group();
+    world.add(coin);
+
+    // ---------- materiais (paleta tirada da moeda de referência) ----------
+    var goldRim = new THREE.MeshPhysicalMaterial({
+      color: 0xc4881f,
+      metalness: 1,
+      roughness: 0.36,
+      clearcoat: 0.04,
+      clearcoatRoughness: 0.6,
+      envMapIntensity: 0.5
+    });
+
+    var goldRimSide = goldRim.clone();
+    goldRimSide.color = new THREE.Color(0xc4881f).multiplyScalar(0.42);
+
+    var goldLip = new THREE.MeshPhysicalMaterial({
+      color: 0x351f06,
+      metalness: 1,
+      roughness: 0.48,
+      clearcoat: 0.02,
+      envMapIntensity: 0.35,
+      flatShading: true
+    });
+
+    var goldSymbol = new THREE.MeshPhysicalMaterial({
+      color: 0xe0a52a,
+      metalness: 1,
+      roughness: 0.24,
+      clearcoat: 0.06,
+      clearcoatRoughness: 0.5,
+      envMapIntensity: 0.55
+    });
+
+    // ---------- aro da moeda: perfil real (face plana + borda biselada), girado 360° ----------
+    var OUTER_R = 1.62;
+    var INNER_R = 1.37;
+    var RING_DEPTH = 0.3;
+    var BEVEL_T = 0.05, BEVEL_S = 0.045;
+    var H = RING_DEPTH / 2;
+    var IB_S = 0.028, IB_T = 0.026;
+    var ringProfile = [
+      new THREE.Vector2(INNER_R + IB_S, -(H + BEVEL_T)),
+      new THREE.Vector2(OUTER_R - BEVEL_S, -(H + BEVEL_T)),
+      new THREE.Vector2(OUTER_R, -H),
+      new THREE.Vector2(OUTER_R, H),
+      new THREE.Vector2(OUTER_R - BEVEL_S, H + BEVEL_T),
+      new THREE.Vector2(INNER_R + IB_S, H + BEVEL_T),
+      new THREE.Vector2(INNER_R, H + BEVEL_T - IB_T),
+      new THREE.Vector2(INNER_R, -(H + BEVEL_T - IB_T)),
+      new THREE.Vector2(INNER_R + IB_S, -(H + BEVEL_T))
+    ];
+    var ringGeo = new THREE.LatheGeometry(ringProfile, 128);
+    ringGeo.rotateX(Math.PI / 2);
+    var RING_TOTAL_DEPTH = RING_DEPTH + 2 * BEVEL_T;
+
+    var ringMat = goldRim.clone();
+    ringMat.side = THREE.DoubleSide;
+    ringMat.flatShading = true;
+    var outerRim = new THREE.Mesh(ringGeo, ringMat);
+    outerRim.castShadow = true;
+    outerRim.receiveShadow = true;
+    coin.add(outerRim);
+
+    // serrilha da borda -- ranhura escura por baixo, pra ter profundidade real
+    var darkGroove = new THREE.MeshStandardMaterial({ color: 0x070502, metalness: 0.15, roughness: 0.95 });
+    var grooveShape = new THREE.Shape();
+    grooveShape.absarc(0, 0, OUTER_R + 0.012, 0, Math.PI * 2, false);
+    var grooveHole = new THREE.Path();
+    grooveHole.absarc(0, 0, OUTER_R - 0.05, 0, Math.PI * 2, true);
+    grooveShape.holes.push(grooveHole);
+    var grooveGeo = new THREE.ExtrudeGeometry(grooveShape, { depth: RING_TOTAL_DEPTH * 0.8, bevelEnabled: false, curveSegments: 128 });
+    grooveGeo.translate(0, 0, -RING_TOTAL_DEPTH * 0.4);
+    var groove = new THREE.Mesh(grooveGeo, darkGroove);
+    coin.add(groove);
+
+    var NOTCH_H = 0.01;
+    var NOTCH_W = 0.07;
+    var NOTCH_CORNER = 0.0035;
+    var notchShape = new THREE.Shape();
+    var nhw = NOTCH_W / 2, nhh = NOTCH_H / 2, nc = NOTCH_CORNER;
+    notchShape.moveTo(-nhw + nc, -nhh);
+    notchShape.lineTo(nhw - nc, -nhh);
+    notchShape.lineTo(nhw, -nhh + nc);
+    notchShape.lineTo(nhw, nhh - nc);
+    notchShape.lineTo(nhw - nc, nhh);
+    notchShape.lineTo(-nhw + nc, nhh);
+    notchShape.lineTo(-nhw, nhh - nc);
+    notchShape.lineTo(-nhw, -nhh + nc);
+    notchShape.closePath();
+    var notchDepth = RING_TOTAL_DEPTH * 0.94;
+    var notchGeo = new THREE.ExtrudeGeometry(notchShape, { depth: notchDepth, bevelEnabled: false, curveSegments: 1 });
+    notchGeo.translate(0, 0, -notchDepth / 2);
+    var notchCount = 66;
+    var notches = new THREE.InstancedMesh(notchGeo, goldLip, notchCount);
+    var dummy = new THREE.Object3D();
+    var notchOutRadius = OUTER_R + 0.007;
+    for (var i = 0; i < notchCount; i++) {
+      var a = (i / notchCount) * Math.PI * 2;
+      dummy.position.set(Math.cos(a) * notchOutRadius, Math.sin(a) * notchOutRadius, 0.005);
+      dummy.rotation.z = a + Math.PI / 2;
+      dummy.updateMatrix();
+      notches.setMatrixAt(i, dummy.matrix);
+    }
+    coin.add(notches);
+
+    // ---------- cifrão ("$"), esculpido a partir de uma fonte real ----------
+    var GS = 0.108;
+    var HALF_W = 1.05 * GS;
+    var DOLLAR_DEPTH = 0.24;
+
+    var dollar = new THREE.Group();
+
+    function traceLetterOutline(letter) {
+      var res = 512;
+      var cv = document.createElement('canvas');
+      cv.width = res; cv.height = res;
+      var cx = cv.getContext('2d');
+      cx.clearRect(0, 0, res, res);
+      cx.fillStyle = '#fff';
+      cx.font = '500 ' + Math.round(res * 0.82) + 'px Arial, "Helvetica Neue", Helvetica, sans-serif';
+      cx.textAlign = 'center';
+      cx.textBaseline = 'middle';
+      cx.fillText(letter, res / 2, res / 2 + res * 0.02);
+      var img = cx.getImageData(0, 0, res, res).data;
+      function inside(x, y) {
+        if (x < 0 || y < 0 || x >= res || y >= res) return false;
+        return img[(y * res + x) * 4 + 3] > 128;
+      }
+      var sx = -1, sy = -1;
+      for (var y = 0; y < res && sx < 0; y++) {
+        for (var x = 0; x < res; x++) { if (inside(x, y)) { sx = x; sy = y; break; } }
+      }
+      if (sx < 0) return null;
+      var dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+      var boundary = [];
+      var curX = sx, curY = sy, backDirIdx = 4;
+      var steps = 0, maxSteps = res * res;
+      do {
+        boundary.push([curX, curY]);
+        var found = false;
+        for (var k = 1; k <= 8; k++) {
+          var di = (backDirIdx + k) % 8;
+          var nx = curX + dirs[di][0], ny = curY + dirs[di][1];
+          if (inside(nx, ny)) { curX = nx; curY = ny; backDirIdx = (di + 4) % 8; found = true; break; }
+        }
+        if (!found) break;
+        steps++;
+      } while (!(curX === sx && curY === sy) && steps < maxSteps);
+      if (boundary.length < 20) return null;
+      return { points: boundary, res: res };
+    }
+
+    var sShape = null;
+    try {
+      var traced = traceLetterOutline('S');
+      if (traced) {
+        var raw = traced.points;
+        var targetCount = 150;
+        var step = Math.max(1, Math.floor(raw.length / targetCount));
+        var px = [];
+        for (var pi = 0; pi < raw.length; pi += step) px.push(raw[pi]);
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        px.forEach(function (p) { if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0]; if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1]; });
+        var bboxCx = (minX + maxX) / 2, bboxCy = (minY + maxY) / 2;
+        var DESIRED_H = 17;
+        var scl = DESIRED_H / (maxY - minY);
+        sShape = new THREE.Shape();
+        px.forEach(function (p, idx) {
+          var svgX = (p[0] - bboxCx) * scl + 12;
+          var svgY = (p[1] - bboxCy) * scl + 12;
+          var fx = (svgX - 12) * GS, fy = (12 - svgY) * GS;
+          if (idx === 0) sShape.moveTo(fx, fy); else sShape.lineTo(fx, fy);
+        });
+        sShape.closePath();
+      }
+    } catch (e) { sShape = null; }
+
+    if (!sShape) {
+      var DollarCurve = function () {
+        THREE.Curve.call(this);
+        this.segLen = [7.5, 11.0, 5, 11.0, 8.5];
+        var total = 0;
+        for (var i = 0; i < this.segLen.length; i++) total += this.segLen[i];
+        this.cum = [0];
+        var c = 0;
+        for (i = 0; i < this.segLen.length; i++) { c += this.segLen[i] / total; this.cum.push(c); }
+      };
+      DollarCurve.prototype = Object.create(THREE.Curve.prototype);
+      DollarCurve.prototype.constructor = DollarCurve;
+      DollarCurve.prototype.getPoint = function (t) {
+        var i = 0;
+        for (; i < 4; i++) { if (t <= this.cum[i + 1]) break; }
+        var span = this.cum[i + 1] - this.cum[i];
+        var st = span > 0 ? (t - this.cum[i]) / span : 0;
+        var x, y;
+        if (i === 0) { x = 17 - 7.5 * st; y = 5; }
+        else if (i === 1) { var a1 = -Math.PI / 2 - Math.PI * st; x = 9.5 + 3.5 * Math.cos(a1); y = 8.5 + 3.5 * Math.sin(a1); }
+        else if (i === 2) { x = 9.5 + 5 * st; y = 12; }
+        else if (i === 3) { var a2 = -Math.PI / 2 + Math.PI * st; x = 14.5 + 3.5 * Math.cos(a2); y = 15.5 + 3.5 * Math.sin(a2); }
+        else { x = 14.5 - 8.5 * st; y = 19; }
+        return new THREE.Vector3((x - 12) * GS, (12 - y) * GS, 0);
+      };
+      var sCurve = new DollarCurve();
+      var S_SEGMENTS = 120;
+      var centerPts = [];
+      for (var si = 0; si <= S_SEGMENTS; si++) centerPts.push(sCurve.getPoint(si / S_SEGMENTS));
+      var S_HALF_W = HALF_W * 1.4;
+      var outerPts = [], innerPts = [];
+      for (si = 0; si < S_SEGMENTS; si++) {
+        var pa = centerPts[si], pb = centerPts[si + 1];
+        var dx = pb.x - pa.x, dy = pb.y - pa.y;
+        var len = Math.sqrt(dx * dx + dy * dy) || 1;
+        var nx = -dy / len * S_HALF_W, ny = dx / len * S_HALF_W;
+        outerPts.push(new THREE.Vector2(pa.x + nx, pa.y + ny), new THREE.Vector2(pb.x + nx, pb.y + ny));
+        innerPts.push(new THREE.Vector2(pa.x - nx, pa.y - ny), new THREE.Vector2(pb.x - nx, pb.y - ny));
+      }
+      innerPts.reverse();
+      sShape = new THREE.Shape();
+      sShape.moveTo(outerPts[0].x, outerPts[0].y);
+      outerPts.slice(1).forEach(function (p) { sShape.lineTo(p.x, p.y); });
+      innerPts.forEach(function (p) { sShape.lineTo(p.x, p.y); });
+      sShape.closePath();
+    }
+
+    var CHAMFER = HALF_W * 0.22;
+
+    var sGeo = new THREE.ExtrudeGeometry(sShape, { depth: DOLLAR_DEPTH, bevelEnabled: true, bevelThickness: CHAMFER, bevelSize: CHAMFER, bevelSegments: 1, curveSegments: 1 });
+    sGeo.translate(0, 0, -DOLLAR_DEPTH / 2);
+    var sMesh = new THREE.Mesh(sGeo, goldSymbol);
+    sMesh.castShadow = true;
+    dollar.add(sMesh);
+
+    var barHeight = 22 * GS;
+    var barWidth = HALF_W * 1.0;
+    var BAR_OFFSET = HALF_W * 1.15;
+    function barShape(w, h) {
+      var w2 = w / 2, h2 = h / 2;
+      var s = new THREE.Shape();
+      s.moveTo(-w2, -h2); s.lineTo(w2, -h2); s.lineTo(w2, h2); s.lineTo(-w2, h2); s.closePath();
+      return s;
+    }
+    [-1, 1].forEach(function (side) {
+      var barGeo = new THREE.ExtrudeGeometry(barShape(barWidth, barHeight), { depth: DOLLAR_DEPTH, bevelEnabled: true, bevelThickness: CHAMFER, bevelSize: CHAMFER, bevelSegments: 1, curveSegments: 1 });
+      barGeo.translate(0, 0, -DOLLAR_DEPTH / 2);
+      var bar = new THREE.Mesh(barGeo, goldSymbol);
+      bar.position.x = side * BAR_OFFSET;
+      bar.castShadow = true;
+      dollar.add(bar);
+    });
+
+    dollar.position.set(0, 0, RING_TOTAL_DEPTH / 2 + DOLLAR_DEPTH / 2 - 0.28);
+    coin.add(dollar);
+
+    // ---------- sombra de contato suave embaixo da moeda ----------
+    var groundGeo = new THREE.PlaneGeometry(30, 30);
+    var ground = new THREE.Mesh(groundGeo, new THREE.ShadowMaterial({ opacity: 0.4 }));
+    ground.position.y = -2.6;
+    ground.position.z = -0.5;
+    ground.rotation.x = -Math.PI / 2.35;
+    ground.receiveShadow = true;
+    world.add(ground);
+
+    // ---------- redimensionamento: a moeda sempre cabe no quadradinho ----------
+    var FIT_RADIUS = OUTER_R * 1.42;
+    var BASE_DIST = 7.2;
+    var vFovRad = camera.fov * Math.PI / 180;
+    function resize() {
+      var w = wrap.clientWidth || 220, h = wrap.clientHeight || 220;
+      renderer.setSize(w, h, false);
+      var aspect = w / h;
+      camera.aspect = aspect;
+      var halfTan = Math.tan(vFovRad / 2);
+      var distForHeight = FIT_RADIUS / halfTan;
+      var distForWidth = FIT_RADIUS / (halfTan * aspect);
+      camera.position.z = Math.max(BASE_DIST, distForHeight, distForWidth);
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ---------- giro contínuo, sem parar (aqui é a tela de abertura, sem controles) ----------
+    var clock = new THREE.Clock();
+    var spinSpeed = reduceMotion ? 0.12 : 0.95;
+
+    var rafId = null;
+    function animate() {
+      rafId = requestAnimationFrame(animate);
+      var dt = Math.min(clock.getDelta(), 0.05);
+      coin.rotation.y += dt * spinSpeed;
+      if (coin.rotation.y > Math.PI * 2) coin.rotation.y -= Math.PI * 2;
+      renderer.render(scene, camera);
+    }
+    animate();
+    startProgressAnimations();
+
+    // Se a tela de abertura já foi escondida (app carregou), para o loop
+    // de animação pra não gastar bateria/CPU à toa nos bastidores.
+    var splashEl = document.getElementById('app-splash');
+    if (splashEl) {
+      var mo = new MutationObserver(function () {
+        if (splashEl.classList.contains('hidden') && rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+          window.removeEventListener('resize', resize);
+          mo.disconnect();
+        }
+      });
+      mo.observe(splashEl, { attributes: true, attributeFilter: ['class'] });
+    }
+  } catch (err) {
+    useFallback();
   }
 })();
 </script>
