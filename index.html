@@ -2428,8 +2428,8 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '5.00.00';
-  const APP_VERSION_DATE = '22/09/2026';
+  const APP_VERSION = '5.02.00';
+  const APP_VERSION_DATE = '28/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
     if (el) el.textContent = 'Versão ' + APP_VERSION + ' · atualizado em ' + APP_VERSION_DATE + '. Se essa versão estiver desatualizada em relação à conversa com o Claude, feche a aba e abra o link de novo.';
@@ -2728,6 +2728,16 @@
   // logo abaixo). É carregada de forma assíncrona; enquanto isso, usamos o
   // link "data:" como reserva.
   let downloadsCap = null;
+  // Detecta se a página está aberta dentro de um iframe (como acontece no
+  // visualizador de artefatos do app da Claude) ou direto numa aba do
+  // navegador (como quando você abre o link do artefato direto no Chrome).
+  // Isso importa porque o jeito de baixar arquivo que funciona melhor é
+  // diferente em cada caso: dentro do app da Claude, o link "download"
+  // manual às vezes não dispara nada; numa aba normal do navegador, ele
+  // sempre funciona e é o jeito mais confiável.
+  const isEmbeddedInClaudeApp = (function () {
+    try { return window.top !== window.self; } catch (e) { return true; }
+  })();
   (async () => {
     try {
       if (window.claude && typeof window.claude.use === 'function') {
@@ -2754,26 +2764,37 @@
     for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
     return new Blob([bytes], { type: mime });
   }
+  // Baixa um blob usando o link "download" padrão do navegador — é o jeito
+  // que sempre funciona quando a página está aberta direto numa aba (não
+  // dentro de um iframe/app).
+  function downloadBlobDirectly(blob, filename) {
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename || 'arquivo';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  }
   async function openDataUrl(dataUrl, filename) {
     try {
       const blob = dataUrlToBlob(dataUrl);
-      // Preferimos a capability oficial de download da plataforma: dentro do
-      // visualizador de artefatos do próprio app do Claude, um <a download>
-      // manual (via blob: URL) pode não disparar nada — a capability é o
-      // canal correto pra entregar um arquivo ao usuário nesse ambiente.
+      // Fora do app da Claude (link aberto direto numa aba do navegador), o
+      // link "download" padrão é o mais confiável. Só usamos a capability
+      // especial da plataforma quando a página está mesmo dentro do
+      // visualizador de artefatos do app — lá o link manual às vezes não
+      // dispara nada.
+      if (!isEmbeddedInClaudeApp) {
+        downloadBlobDirectly(blob, filename || 'comprovante');
+        return;
+      }
       if (downloadsCap) {
         await downloadsCap.save({ filename: filename || 'comprovante', data: blob });
         return;
       }
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename || 'comprovante';
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      downloadBlobDirectly(blob, filename || 'comprovante');
     } catch (err) {
       if (err && err.code === 'declined') return;
       showToast('Não foi possível abrir o comprovante. Tente recarregar a página.', true);
@@ -6304,11 +6325,17 @@
   }
 
   // ---------- IMPORT / EXPORT ----------
+  // Os botões de baixar planilha SEMPRE ficam disponíveis agora: fora do app
+  // da Claude, o download acontece pelo link padrão do navegador (que não
+  // depende de nenhuma capability especial), e dentro do app usa a
+  // capability quando ela existir. Só mostra o aviso "indisponível" no caso
+  // raro de estar dentro do app e a capability ainda não ter carregado nem o
+  // link padrão fazer sentido.
   function updateDownloadUI() {
     const unavailable = document.getElementById('download-unavailable');
     const templateBtn = document.getElementById('download-template-btn');
     const exportBtn = document.getElementById('export-btn');
-    const ok = !!downloadsCap;
+    const ok = !isEmbeddedInClaudeApp || !!downloadsCap;
     if (unavailable) unavailable.style.display = ok ? 'none' : 'block';
     if (templateBtn) templateBtn.disabled = !ok;
     if (exportBtn) exportBtn.disabled = !ok;
@@ -6358,16 +6385,24 @@
     XLSX.utils.book_append_sheet(wb, fixedSheet, 'ContasFixas');
     // Empréstimos feitos no cartão (a receber de outra pessoa) — também
     // faltavam no arquivo exportado.
+    // Usa cardLoanPaid(c) em vez de c.paidInstallments direto: assim a
+    // planilha conta certinho as parcelas marcadas como recebidas pelo botão
+    // "Marcar parcela recebida" (guardadas em c.payments), que antes ficavam
+    // de fora da contagem exportada.
     const cardLoanSheet = XLSX.utils.json_to_sheet(state.cardLoans.map(c => ({
       Pessoa: c.person, Descricao: c.description || '', Valor: c.amount,
       Cartao: CARD_META[c.card || 'nubank'], Vencimento: c.dueDate || '',
-      TotalParcelas: c.totalInstallments || 1, ParcelasPagas: c.paidInstallments || 0
+      TotalParcelas: cardLoanTotal(c), ParcelasPagas: cardLoanPaid(c),
+      ValorAindaAReceber: cardLoanRemaining(c)
     })));
     XLSX.utils.book_append_sheet(wb, cardLoanSheet, 'EmprestimosCartao');
-    // Empréstimos pessoais (dinheiro emprestado a alguém, fora do cartão).
+    // Empréstimos pessoais (dinheiro emprestado a alguém, fora do cartão) —
+    // agora também mostra quanto já foi pago e quanto ainda falta, somando
+    // o histórico de pagamentos registrados (state.personLoans[].payments).
     const personLoanSheet = XLSX.utils.json_to_sheet(state.personLoans.map(p => ({
       Pessoa: p.person, Descricao: p.description || '', Valor: p.amount,
-      DataRecebimento: p.dateReceived || ''
+      DataRecebimento: p.dateReceived || '',
+      ValorPago: personLoanPaid(p), ValorRestante: personLoanRemaining(p)
     })));
     XLSX.utils.book_append_sheet(wb, personLoanSheet, 'EmprestimosPessoais');
     return wb;
@@ -6386,10 +6421,18 @@
   }
 
   async function downloadWorkbook(wb, filename) {
-    if (!downloadsCap) { showToast('O download de arquivos não está disponível neste momento.', true); return; }
     try {
       const arr = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      // Mesma lógica de openDataUrl: fora do app da Claude, usa o link
+      // "download" padrão do navegador direto (mais confiável); só usa a
+      // capability especial da plataforma quando estiver mesmo dentro do
+      // visualizador de artefatos do app.
+      if (!isEmbeddedInClaudeApp || !downloadsCap) {
+        downloadBlobDirectly(blob, filename);
+        showToast('Planilha baixada! Confira a pasta de downloads do seu navegador.');
+        return;
+      }
       await downloadsCap.save({ filename, data: blob });
     } catch (err) {
       if (!err || err.code !== 'declined') showToast('Não foi possível baixar a planilha agora.', true);
