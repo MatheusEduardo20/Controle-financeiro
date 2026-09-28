@@ -1723,8 +1723,9 @@
 <div id="app-lock" style="display:none;">
   <div class="lock-icon">🔒</div>
   <div class="lock-title">Dados protegidos</div>
-  <p class="lock-sub">Digite sua senha para destravar o app.</p>
+  <p class="lock-sub" id="lock-sub">Digite sua senha para destravar o app.</p>
   <form id="lock-form" autocomplete="off">
+    <input type="email" id="lock-email-input" placeholder="Seu e-mail" autocomplete="email" style="display:none; margin-bottom:10px;">
     <input type="password" id="lock-password-input" placeholder="Senha" autocomplete="current-password" autofocus>
     <div id="lock-error" class="lock-error"></div>
     <button type="submit" class="add-btn" style="margin-top:14px;">Destravar</button>
@@ -2301,57 +2302,49 @@
       <div id="card-settings-list"></div>
       </div>
       <div class="section-card">
-      <h2 class="section-title" style="margin-top:4px;">Proteger dados com senha</h2>
+      <h2 class="section-title" style="margin-top:4px;">Sincronizar com a nuvem</h2>
       <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 10px;">
-        Ativa criptografia de verdade (AES-256) nos dados salvos neste aparelho e nos backups exportados. Sem a senha, ninguém consegue ler os dados — nem quem tiver acesso aos arquivos do navegador.
+        Acesse os mesmos dados em qualquer aparelho (celular, computador...). Seus dados são embaralhados (criptografados) neste aparelho ANTES de subir para a nuvem, usando a senha da sua conta — nem o servidor consegue ler.
       </p>
-      <div id="encryption-status-off">
-        <input type="password" id="enc-setup-password" placeholder="Crie uma senha" autocomplete="new-password" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:8px;">
-        <input type="password" id="enc-setup-password-confirm" placeholder="Confirme a senha" autocomplete="new-password" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:10px;">
-        <button type="button" class="add-btn" id="enc-enable-btn" style="margin-top:0;">Ativar criptografia</button>
-        <p style="color:var(--muted); font-size:0.74rem; line-height:1.5; margin:8px 0 0;">
-          Guarde essa senha num lugar seguro — se esquecer, não tem como recuperar os dados salvos neste aparelho.
+      <div id="cloud-status-off">
+        <div id="cloud-tabs" style="display:flex; gap:8px; margin-bottom:10px;">
+          <button type="button" class="add-btn" id="cloud-tab-login" style="margin-top:0; flex:1;">Entrar</button>
+          <button type="button" class="add-btn" id="cloud-tab-signup" style="margin-top:0; flex:1; background:var(--surface-2); color:var(--ink); box-shadow:none;">Criar conta</button>
+        </div>
+        <input type="email" id="cloud-email" placeholder="Seu e-mail" autocomplete="email" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:8px;">
+        <input type="password" id="cloud-password" placeholder="Senha" autocomplete="current-password" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:8px;">
+        <input type="password" id="cloud-password-confirm" placeholder="Confirme a senha" autocomplete="new-password" style="display:none; width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem; margin-bottom:8px;">
+        <div id="cloud-error" style="color:var(--negative); font-size:0.78rem; min-height:1.1em; margin-bottom:6px;"></div>
+        <button type="button" class="add-btn" id="cloud-submit-btn" style="margin-top:0;">Entrar</button>
+        <p id="cloud-signup-warning" style="display:none; color:var(--muted); font-size:0.74rem; line-height:1.5; margin:8px 0 0;">
+          Guarde essa senha muito bem: ela também é a chave que embaralha seus dados. Se esquecer, não tem como recuperar os dados enviados à nuvem.
         </p>
       </div>
-      <div id="encryption-status-on" style="display:none;">
-        <div style="display:flex; align-items:center; gap:8px; padding:9px 11px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-size:0.82rem; margin-bottom:10px;">
-          🔒 Proteção por senha ativa
+      <div id="cloud-status-on" style="display:none;">
+        <div style="display:flex; align-items:center; gap:8px; padding:9px 11px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-size:0.82rem; margin-bottom:6px;">
+          ☁️ Conectado como <span id="cloud-user-email" style="font-weight:700; margin-left:4px;"></span>
         </div>
-        <button type="button" class="add-btn" id="enc-disable-btn" style="margin-top:0; background:var(--surface-2); color:var(--negative); box-shadow:none;">Desativar proteção</button>
+        <div id="cloud-sync-note" style="color:var(--muted); font-size:0.76rem; margin-bottom:10px;"></div>
+        <button type="button" class="add-btn" id="cloud-logout-btn" style="margin-top:0; background:var(--surface-2); color:var(--negative); box-shadow:none;">Sair da conta</button>
       </div>
+      <p id="cloud-unavailable" style="display:none; color:var(--muted); font-size:0.8rem; margin-top:8px;">A sincronização com a nuvem não está disponível neste momento (sem conexão com o serviço). Seus dados continuam salvos neste aparelho normalmente.</p>
       </div>
       <div class="section-card">
-      <h2 class="section-title" style="margin-top:4px;">Transferir dados entre aparelhos</h2>
+      <h2 class="section-title" style="margin-top:4px;">Backup</h2>
       <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 8px;">
-        Esta versão (instalada fora do Claude) guarda os dados só neste aparelho/navegador. Para levar os dados de um aparelho para o outro: exporte um arquivo aqui e importe-o no outro aparelho. Nada é enviado para nenhum servidor — o arquivo fica só com você.
+        Seus dados já ficam sincronizados na nuvem. Use o backup só como cópia de segurança: baixe um arquivo para o seu computador e guarde num lugar seguro. Se algo der errado um dia, é só importar esse arquivo de volta para recuperar tudo.
       </p>
       <div id="export-reminder-banner" style="display:none; padding:9px 11px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-size:0.78rem; line-height:1.4; margin-bottom:10px;"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="add-btn" id="pwa-export-btn" style="margin-top:0; flex:1;">Exportar dados (baixar arquivo)</button>
-        <button type="button" class="add-btn" id="pwa-import-btn" style="margin-top:0; flex:1; background:var(--surface-2); color:var(--ink); box-shadow:none;">Importar dados (de um arquivo)</button>
+        <button type="button" class="add-btn" id="pwa-export-btn" style="margin-top:0; flex:1;">Fazer backup (baixar arquivo)</button>
+        <button type="button" class="add-btn" id="pwa-import-btn" style="margin-top:0; flex:1; background:var(--surface-2); color:var(--ink); box-shadow:none;">Restaurar backup (de um arquivo)</button>
       </div>
-      <input type="file" id="pwa-import-file" accept="application/json" style="display:none;">
+      <input type="file" id="pwa-import-file" accept="application/json,.json" style="display:none;">
       <p style="color:var(--muted); font-size:0.76rem; line-height:1.5; margin:10px 0 0;">
-        Importar substitui todos os dados atuais deste aparelho pelos dados do arquivo escolhido. Confira se é o arquivo certo antes de confirmar.
+        O backup guarda todas as informações do app: contas, lançamentos, metas, parceladas, contas fixas, empréstimos e cartões. Restaurar substitui todos os dados atuais pelos do arquivo escolhido; confira se é o arquivo certo antes de confirmar.
       </p>
       </div>
 
-      <h2 class="section-title">Importar de planilha</h2>
-      <p style="color:var(--muted); font-size:0.85rem; line-height:1.5;">
-        Prefere preencher os dados numa planilha em vez de digitar aqui? Baixe o modelo, preencha no Excel e importe de volta. A importação substitui os dados atuais do aplicativo.
-      </p>
-      <button class="add-btn" id="download-template-btn">Baixar planilha modelo</button>
-      <label class="add-btn" id="import-label" style="display:block; text-align:center; margin-top:10px; cursor:pointer;">
-        Importar planilha preenchida
-        <input type="file" id="import-file" accept=".xlsx,.xls,.csv" class="file-hidden">
-      </label>
-
-      <h2 class="section-title">Exportar planilha</h2>
-      <p style="color:var(--muted); font-size:0.85rem; line-height:1.5;">
-        Baixe todos os seus dados atuais numa planilha. Serve como backup ou para levar seus dados para uma futura versão deste aplicativo.
-      </p>
-      <button class="add-btn" id="export-btn">Baixar planilha com meus dados</button>
-      <p id="download-unavailable" style="display:none; color:var(--muted); font-size:0.8rem; margin-top:8px;">O download de arquivos não está disponível neste momento.</p>
 
       <h2 class="section-title">Prévia dos dados</h2>
       <p style="color:var(--muted); font-size:0.85rem; line-height:1.5;">
@@ -2371,7 +2364,12 @@
   </nav>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- SDKs oficiais do Firebase (versão "compat", que funciona com <script> comum,
+     sem precisar de ferramentas de build) — usados só para login e para guardar
+     a cópia criptografada dos dados na nuvem. -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (function () {
   // Rede de segurança: se algum erro de JS não tratado acontecer, mostra um
@@ -2401,6 +2399,38 @@
       document.getElementById('debug-box-msg').textContent = 'Ocorreu um erro inesperado: ' + e.message + '. Se algo não estiver funcionando, recarregue a página; se persistir, avise no chat.';
     });
   } catch (diagErr) { /* ignore */ }
+
+  // ---------- FIREBASE (nuvem: login e guarda da cópia criptografada) ----------
+  // A configuração abaixo NÃO é secreta — ela só diz ao navegador qual
+  // projeto do Firebase usar, como um endereço. Quem realmente protege seus
+  // dados são as regras de segurança do Firestore (só você lê/grava os seus
+  // dados) e a criptografia ponta-a-ponta (mais abaixo), que embaralha tudo
+  // antes de sair do seu aparelho.
+  const firebaseConfig = {
+    apiKey: "AIzaSyBX4ldYajJlo14IIHVsPg0_NsyFdJfOcug",
+    authDomain: "controle-financeiro-20d53.firebaseapp.com",
+    projectId: "controle-financeiro-20d53",
+    storageBucket: "controle-financeiro-20d53.firebasestorage.app",
+    messagingSenderId: "325607374035",
+    appId: "1:325607374035:web:f858adc4980e8bb3dd6826"
+  };
+  let fbApp = null, fbAuth = null, fbDb = null, fbAvailable = false;
+  try {
+    if (typeof firebase !== 'undefined') {
+      fbApp = firebase.initializeApp(firebaseConfig);
+      fbAuth = firebase.auth();
+      fbDb = firebase.firestore();
+      // Deixa o Firestore guardar uma cópia local (cache) automaticamente,
+      // para o app continuar funcionando offline e sincronizar sozinho
+      // quando a internet voltar.
+      try { fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
+      fbAvailable = true;
+    }
+  } catch (e) {
+    console.warn('Não foi possível iniciar a conexão com a nuvem', e);
+    fbAvailable = false;
+  }
+
   // Alguns celulares Android "esquecem" de atualizar a área de toque quando
   // o teclado virtual fecha, deixando a tela sem responder a cliques até
   // recarregar. Forçar um reflow (e tirar o foco) logo que o teclado some
@@ -2428,7 +2458,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '5.02.00';
+  const APP_VERSION = '5.03.00';
   const APP_VERSION_DATE = '28/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -2844,6 +2874,263 @@
     const obj = JSON.parse(new TextDecoder().decode(plainBuf));
     return { obj, key };
   }
+  // Igual a decryptPayload, mas reaproveitando uma chave já calculada (em vez
+  // de recalcular a partir da senha, que é de propósito lento — 210 mil
+  // rodadas — para dificultar tentativas de adivinhação). Usada nas
+  // atualizações que chegam de outro aparelho pela nuvem, que podem acontecer
+  // várias vezes seguidas.
+  async function decryptWithKey(envelope, key) {
+    const ivBytes = b64ToBuf(envelope.iv);
+    const cipherBytes = b64ToBuf(envelope.data);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBytes }, key, cipherBytes);
+    return JSON.parse(new TextDecoder().decode(plainBuf));
+  }
+
+  // ---------- SINCRONIZAÇÃO NA NUVEM (conta com e-mail/senha + Firestore) ----------
+  // Como funciona, em resumo: ao criar a conta ou entrar, a própria senha é
+  // usada (via a mesma criptografia de cima) para embaralhar os dados antes
+  // de subir — então o que fica guardado no Firestore é só um envelope
+  // ilegível (mesmo formato { enc, salt, iv, data } de cima). Cada aparelho
+  // logado com a mesma conta escuta atualizações em tempo real e baixa/
+  // desembaralha automaticamente assim que alguma mudança chega.
+  let cloudUser = null;
+  let cloudMode = 'login'; // 'login' | 'signup' — qual aba está selecionada
+  let cloudUnsub = null; // função para parar de "escutar" a nuvem
+  let cloudApplyingRemote = false; // true enquanto aplica uma atualização vinda de outro aparelho (evita reenviar de volta em looping)
+  let cloudPushTimer = null;
+  let lastCloudPushedAt = 0;
+
+  function cloudDocRef(uid) {
+    return fbDb.collection('users').doc(uid);
+  }
+
+  // Traduz os erros técnicos do Firebase para frases que fazem sentido pra
+  // quem não é programador.
+  function cloudErrorMessage(err) {
+    const code = err && err.code;
+    const map = {
+      'auth/email-already-in-use': 'Já existe uma conta com esse e-mail. Tente "Entrar" em vez de "Criar conta".',
+      'auth/invalid-email': 'Esse e-mail não parece válido. Confira e tente de novo.',
+      'auth/weak-password': 'Use uma senha com pelo menos 6 caracteres.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+      'auth/user-not-found': 'Não encontrei nenhuma conta com esse e-mail. Tente "Criar conta".',
+      'auth/too-many-requests': 'Muitas tentativas seguidas. Espere um pouco e tente de novo.',
+      'auth/network-request-failed': 'Sem conexão com a internet no momento.'
+    };
+    return (code && map[code]) || 'Não foi possível concluir agora. Tente de novo em instantes.';
+  }
+
+  function updateCloudSyncNote(text) {
+    const el = document.getElementById('cloud-sync-note');
+    if (el) el.textContent = text || 'Seus dados sincronizam automaticamente entre os aparelhos conectados nesta conta.';
+  }
+
+  function updateCloudUI() {
+    const off = document.getElementById('cloud-status-off');
+    const on = document.getElementById('cloud-status-on');
+    const unavailable = document.getElementById('cloud-unavailable');
+    if (unavailable) unavailable.style.display = fbAvailable ? 'none' : 'block';
+    if (!off || !on) return;
+    if (cloudUser) {
+      off.style.display = 'none';
+      on.style.display = 'block';
+      const emailEl = document.getElementById('cloud-user-email');
+      if (emailEl) emailEl.textContent = cloudUser.email || '';
+      updateCloudSyncNote();
+    } else {
+      off.style.display = fbAvailable ? 'block' : 'none';
+      on.style.display = 'none';
+    }
+  }
+
+  function setCloudMode(mode) {
+    cloudMode = mode;
+    const loginTab = document.getElementById('cloud-tab-login');
+    const signupTab = document.getElementById('cloud-tab-signup');
+    const confirmInput = document.getElementById('cloud-password-confirm');
+    const warning = document.getElementById('cloud-signup-warning');
+    const submitBtn = document.getElementById('cloud-submit-btn');
+    const errorEl = document.getElementById('cloud-error');
+    if (errorEl) errorEl.textContent = '';
+    const isSignup = mode === 'signup';
+    if (loginTab) { loginTab.style.background = isSignup ? 'var(--surface-2)' : ''; loginTab.style.color = isSignup ? 'var(--ink)' : ''; loginTab.style.boxShadow = isSignup ? 'none' : ''; }
+    if (signupTab) { signupTab.style.background = isSignup ? '' : 'var(--surface-2)'; signupTab.style.color = isSignup ? '' : 'var(--ink)'; signupTab.style.boxShadow = isSignup ? '' : 'none'; }
+    if (confirmInput) confirmInput.style.display = isSignup ? 'block' : 'none';
+    if (warning) warning.style.display = isSignup ? 'block' : 'none';
+    if (submitBtn) submitBtn.textContent = isSignup ? 'Criar conta' : 'Entrar';
+  }
+  const cloudTabLoginBtn = document.getElementById('cloud-tab-login');
+  const cloudTabSignupBtn = document.getElementById('cloud-tab-signup');
+  if (cloudTabLoginBtn) cloudTabLoginBtn.addEventListener('click', () => setCloudMode('login'));
+  if (cloudTabSignupBtn) cloudTabSignupBtn.addEventListener('click', () => setCloudMode('signup'));
+  setCloudMode('login');
+
+  function stopCloudListener() {
+    if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+  }
+  function startCloudListener() {
+    stopCloudListener();
+    if (!fbAvailable || !cloudUser || !encryptionKey) return;
+    cloudUnsub = cloudDocRef(cloudUser.uid).onSnapshot(async (snap) => {
+      if (!snap.exists) return;
+      if (snap.metadata.hasPendingWrites) return; // é a nossa própria escrita "voltando" — ignora
+      const data = snap.data();
+      if (!data || !data.envelope) return;
+      if (data.updatedAt && data.updatedAt === lastCloudPushedAt) return; // já é o que acabamos de enviar
+      cloudApplyingRemote = true;
+      try {
+        const obj = await decryptWithKey(data.envelope, encryptionKey);
+        state = Object.assign(state, obj);
+        normalizeState();
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data.envelope)); } catch (e) {}
+        lastCloudPushedAt = data.updatedAt || Date.now();
+        renderAll();
+        updateCloudSyncNote('Sincronizado agora, às ' + new Date().toLocaleTimeString('pt-BR'));
+      } catch (err) {
+        console.warn('Não foi possível aplicar a atualização vinda de outro aparelho', err);
+      } finally {
+        cloudApplyingRemote = false;
+      }
+    }, (err) => {
+      console.warn('Falha ao escutar atualizações da nuvem', err);
+      updateCloudSyncNote('Não foi possível sincronizar agora. Verifique sua conexão.');
+    });
+  }
+  async function pushToCloud() {
+    if (!fbAvailable || !cloudUser || !encryptionKey || cloudApplyingRemote) return;
+    try {
+      const envelope = await encryptPayload(state, encryptionKey, encryptionSaltB64);
+      const updatedAt = Date.now();
+      lastCloudPushedAt = updatedAt;
+      await cloudDocRef(cloudUser.uid).set({ envelope, updatedAt });
+      updateCloudSyncNote('Sincronizado agora, às ' + new Date().toLocaleTimeString('pt-BR'));
+    } catch (err) {
+      console.warn('Não foi possível enviar os dados para a nuvem agora', err);
+      updateCloudSyncNote('Não foi possível enviar os dados agora. A próxima alteração tenta de novo.');
+    }
+  }
+  function scheduleCloudPush() {
+    if (!fbAvailable || !cloudUser || !encryptionKey || cloudApplyingRemote) return;
+    if (cloudPushTimer) clearTimeout(cloudPushTimer);
+    cloudPushTimer = setTimeout(pushToCloud, 700);
+  }
+
+  function showCloudError(msg) {
+    const el = document.getElementById('cloud-error');
+    if (el) el.textContent = msg;
+  }
+
+  // Guarda só o e-mail (nunca a senha) neste aparelho, para a tela de
+  // bloqueio saber que esta conta está ligada à nuvem e pedir e-mail + senha.
+  const CLOUD_EMAIL_KEY = 'financas-cloud-email';
+  function rememberCloudEmail(email) { try { localStorage.setItem(CLOUD_EMAIL_KEY, email); } catch (e) {} }
+  function forgetCloudEmail() { try { localStorage.removeItem(CLOUD_EMAIL_KEY); } catch (e) {} }
+  function getRememberedCloudEmail() { try { return localStorage.getItem(CLOUD_EMAIL_KEY) || ''; } catch (e) { return ''; } }
+
+  const cloudSubmitBtn = document.getElementById('cloud-submit-btn');
+  if (cloudSubmitBtn) cloudSubmitBtn.addEventListener('click', async () => {
+    if (!fbAvailable) { showCloudError('Sincronização indisponível no momento.'); return; }
+    const email = (document.getElementById('cloud-email').value || '').trim();
+    const password = document.getElementById('cloud-password').value || '';
+    showCloudError('');
+    if (!email || !password) { showCloudError('Preencha e-mail e senha.'); return; }
+    cloudSubmitBtn.disabled = true;
+    cloudSubmitBtn.textContent = 'Aguarde...';
+    try {
+      if (cloudMode === 'signup') {
+        const confirm = document.getElementById('cloud-password-confirm').value || '';
+        if (password.length < 6) throw { code: 'auth/weak-password' };
+        if (password !== confirm) { showCloudError('As senhas digitadas não são iguais.'); return; }
+        const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
+        cloudUser = cred.user;
+        rememberCloudEmail(email);
+        // Cria uma chave de criptografia nova, a partir dessa senha, e sobe
+        // os dados que já existiam neste aparelho (se houver).
+        const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+        encryptionKey = await deriveKeyFromPassword(password, saltBytes);
+        encryptionSaltB64 = bufToB64(saltBytes);
+        isEncrypted = true;
+        save();
+        await pushToCloud();
+        startCloudListener();
+        showToast('Conta criada! Seus dados já estão sincronizados.');
+      } else {
+        const cred = await fbAuth.signInWithEmailAndPassword(email, password);
+        cloudUser = cred.user;
+        rememberCloudEmail(email);
+        const docSnap = await cloudDocRef(cloudUser.uid).get();
+        if (docSnap.exists && docSnap.data() && docSnap.data().envelope) {
+          const envelope = docSnap.data().envelope;
+          try {
+            const { obj, key } = await decryptPayload(envelope, password);
+            state = Object.assign(state, obj);
+            normalizeState();
+            encryptionKey = key;
+            encryptionSaltB64 = envelope.salt;
+            isEncrypted = true;
+            pendingEncryptedEnvelope = null;
+            lastCloudPushedAt = docSnap.data().updatedAt || Date.now();
+            save();
+            renderAll();
+          } catch (decErr) {
+            // Não deveria acontecer (o Firebase já validou a senha do login),
+            // mas por segurança não deixa a tela num estado incerto.
+            await fbAuth.signOut();
+            cloudUser = null;
+            showCloudError('Não foi possível abrir seus dados da nuvem com esta senha.');
+            return;
+          }
+        } else {
+          // Conta existe mas ainda não tem dados na nuvem (primeiro login) —
+          // usa a senha para começar a proteger os dados deste aparelho e já
+          // envia o que existir aqui.
+          const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+          encryptionKey = await deriveKeyFromPassword(password, saltBytes);
+          encryptionSaltB64 = bufToB64(saltBytes);
+          isEncrypted = true;
+          save();
+        }
+        startCloudListener();
+        showToast('Conectado! Seus dados estão sincronizados.');
+      }
+      document.getElementById('cloud-password').value = '';
+      const confirmInput = document.getElementById('cloud-password-confirm');
+      if (confirmInput) confirmInput.value = '';
+      updateCloudUI();
+      renderEncryptionStatus();
+    } catch (err) {
+      showCloudError(cloudErrorMessage(err));
+    } finally {
+      cloudSubmitBtn.disabled = false;
+      cloudSubmitBtn.textContent = cloudMode === 'signup' ? 'Criar conta' : 'Entrar';
+    }
+  });
+
+  const cloudLogoutBtn = document.getElementById('cloud-logout-btn');
+  if (cloudLogoutBtn) cloudLogoutBtn.addEventListener('click', async () => {
+    stopCloudListener();
+    try { if (fbAvailable) await fbAuth.signOut(); } catch (e) {}
+    cloudUser = null;
+    forgetCloudEmail();
+    updateCloudUI();
+    showToast('Você saiu da conta. Os dados continuam salvos (e protegidos por senha) neste aparelho.');
+  });
+
+  updateCloudUI();
+  if (fbAvailable) {
+    fbAuth.onAuthStateChanged((user) => {
+      cloudUser = user;
+      if (user && user.email) rememberCloudEmail(user.email);
+      updateCloudUI();
+      // Só volta a sincronizar automaticamente se já tivermos a chave de
+      // criptografia em mãos (isto é, depois que a pessoa digitou a senha
+      // na tela de bloqueio deste aparelho, ou acabou de entrar/criar a
+      // conta agora mesmo) — nunca guardamos a chave nem a senha, então
+      // sozinho o app não consegue reabrir dados protegidos.
+      if (user && encryptionKey) startCloudListener();
+    });
+  }
 
   let state = { accounts: [], transactions: [], benefitEntries: [], benefitFixedDeposits: {}, goals: [], recurringIncomes: [], recurringExpenses: [], installments: [], cardLoans: [], cardSettings: {}, personLoans: [], lastFlowPayment: 'debito', lastFlowCategory: 'Outros', budgetReferenceValue: 5750, paidCardInvoices: {} };
   function normalizeState() {
@@ -2899,6 +3186,10 @@
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope)); }
         catch (e) { console.warn('Não foi possível salvar', e); }
       }).catch(e => console.warn('Falha ao criptografar antes de salvar', e));
+      // Além de salvar neste aparelho, se a pessoa estiver conectada à
+      // nuvem, agenda o envio da versão mais nova para lá também (com um
+      // pequeno atraso, pra não enviar uma vez pra cada tecla digitada).
+      scheduleCloudPush();
       return;
     }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -6324,291 +6615,6 @@
     });
   }
 
-  // ---------- IMPORT / EXPORT ----------
-  // Os botões de baixar planilha SEMPRE ficam disponíveis agora: fora do app
-  // da Claude, o download acontece pelo link padrão do navegador (que não
-  // depende de nenhuma capability especial), e dentro do app usa a
-  // capability quando ela existir. Só mostra o aviso "indisponível" no caso
-  // raro de estar dentro do app e a capability ainda não ter carregado nem o
-  // link padrão fazer sentido.
-  function updateDownloadUI() {
-    const unavailable = document.getElementById('download-unavailable');
-    const templateBtn = document.getElementById('download-template-btn');
-    const exportBtn = document.getElementById('export-btn');
-    const ok = !isEmbeddedInClaudeApp || !!downloadsCap;
-    if (unavailable) unavailable.style.display = ok ? 'none' : 'block';
-    if (templateBtn) templateBtn.disabled = !ok;
-    if (exportBtn) exportBtn.disabled = !ok;
-  }
-  updateDownloadUI();
-
-  function buildDataWorkbook() {
-    const wb = XLSX.utils.book_new();
-    const accSheet = XLSX.utils.json_to_sheet(state.accounts.map(a => ({
-      Nome: a.name, Banco: a.bank || '', Saldo: a.balance,
-      Grupo: ACCOUNT_GROUPS.find(g => g.key === (a.group || 'necessidades')).label
-    })));
-    XLSX.utils.book_append_sheet(wb, accSheet, 'Contas');
-    const txSheet = XLSX.utils.json_to_sheet(state.transactions.map(t => ({
-      Mes: t.month,
-      Quinzena: t.period === 'q1' ? '1' : '2',
-      Tipo: t.type === 'income' ? 'Receita' : 'Despesa',
-      Descricao: t.description,
-      Valor: t.amount,
-      Categoria: t.category || ''
-    })));
-    XLSX.utils.book_append_sheet(wb, txSheet, 'Lancamentos');
-    const goalSheet = XLSX.utils.json_to_sheet(state.goals.map(g => ({
-      Nome: g.name, ValorAlvo: g.target, ValorAtual: g.current
-    })));
-    XLSX.utils.book_append_sheet(wb, goalSheet, 'Metas');
-    const instSheet = XLSX.utils.json_to_sheet(state.installments.map(i => ({
-      Descricao: i.description,
-      ValorParcela: i.installmentValue,
-      TotalParcelas: i.totalInstallments,
-      ParcelasPagas: i.paidInstallments,
-      Vencimento: i.period === 'q1' ? '15' : '30',
-      Cartao: CARD_META[i.card || 'nubank'],
-      Grupo: ACCOUNT_GROUPS.find(g => g.key === (i.group || 'necessidades')).label
-    })));
-    XLSX.utils.book_append_sheet(wb, instSheet, 'Parceladas');
-    // Contas fixas (aluguel, assinaturas, etc.) — antes não entravam no
-    // arquivo exportado, então sumiam numa migração/backup.
-    const fixedSheet = XLSX.utils.json_to_sheet(state.recurringExpenses.map(r => ({
-      Descricao: r.description,
-      Valor: r.amount,
-      Categoria: r.category || '',
-      FormaPagamento: PAYMENT_METHOD_LABEL[r.paymentMethod] || r.paymentMethod || '',
-      Frequencia: r.frequency === 'quinzenal' ? 'Quinzenal' : 'Mensal',
-      Quinzena: r.period === 'q1' ? '15' : (r.period === 'q2' ? '30' : '')
-    })));
-    XLSX.utils.book_append_sheet(wb, fixedSheet, 'ContasFixas');
-    // Empréstimos feitos no cartão (a receber de outra pessoa) — também
-    // faltavam no arquivo exportado.
-    // Usa cardLoanPaid(c) em vez de c.paidInstallments direto: assim a
-    // planilha conta certinho as parcelas marcadas como recebidas pelo botão
-    // "Marcar parcela recebida" (guardadas em c.payments), que antes ficavam
-    // de fora da contagem exportada.
-    const cardLoanSheet = XLSX.utils.json_to_sheet(state.cardLoans.map(c => ({
-      Pessoa: c.person, Descricao: c.description || '', Valor: c.amount,
-      Cartao: CARD_META[c.card || 'nubank'], Vencimento: c.dueDate || '',
-      TotalParcelas: cardLoanTotal(c), ParcelasPagas: cardLoanPaid(c),
-      ValorAindaAReceber: cardLoanRemaining(c)
-    })));
-    XLSX.utils.book_append_sheet(wb, cardLoanSheet, 'EmprestimosCartao');
-    // Empréstimos pessoais (dinheiro emprestado a alguém, fora do cartão) —
-    // agora também mostra quanto já foi pago e quanto ainda falta, somando
-    // o histórico de pagamentos registrados (state.personLoans[].payments).
-    const personLoanSheet = XLSX.utils.json_to_sheet(state.personLoans.map(p => ({
-      Pessoa: p.person, Descricao: p.description || '', Valor: p.amount,
-      DataRecebimento: p.dateReceived || '',
-      ValorPago: personLoanPaid(p), ValorRestante: personLoanRemaining(p)
-    })));
-    XLSX.utils.book_append_sheet(wb, personLoanSheet, 'EmprestimosPessoais');
-    return wb;
-  }
-
-  function buildTemplateWorkbook() {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Nome', 'Banco', 'Saldo', 'Grupo (Necessidades/Desejos/Investimento)']]), 'Contas');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Mes', 'Quinzena', 'Tipo', 'Descricao', 'Valor', 'Categoria']]), 'Lancamentos');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Nome', 'ValorAlvo', 'ValorAtual']]), 'Metas');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Descricao', 'ValorParcela', 'TotalParcelas', 'ParcelasPagas', 'Vencimento (15 ou 30)', 'Cartao (Nubank/Santander/Santander 2)', 'Grupo (Necessidades/Desejos/Investimento)']]), 'Parceladas');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Descricao', 'Valor', 'Categoria', 'FormaPagamento (Debito/Pix/Dinheiro/Cartao X)', 'Frequencia (Mensal/Quinzenal)', 'Quinzena (15 ou 30, só se Mensal)']]), 'ContasFixas');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Pessoa', 'Descricao', 'Valor', 'Cartao (Nubank/Santander/Santander 2)', 'Vencimento', 'TotalParcelas', 'ParcelasPagas']]), 'EmprestimosCartao');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Pessoa', 'Descricao', 'Valor', 'DataRecebimento']]), 'EmprestimosPessoais');
-    return wb;
-  }
-
-  async function downloadWorkbook(wb, filename) {
-    try {
-      const arr = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      // Mesma lógica de openDataUrl: fora do app da Claude, usa o link
-      // "download" padrão do navegador direto (mais confiável); só usa a
-      // capability especial da plataforma quando estiver mesmo dentro do
-      // visualizador de artefatos do app.
-      if (!isEmbeddedInClaudeApp || !downloadsCap) {
-        downloadBlobDirectly(blob, filename);
-        showToast('Planilha baixada! Confira a pasta de downloads do seu navegador.');
-        return;
-      }
-      await downloadsCap.save({ filename, data: blob });
-    } catch (err) {
-      if (!err || err.code !== 'declined') showToast('Não foi possível baixar a planilha agora.', true);
-    }
-  }
-
-  document.getElementById('download-template-btn').addEventListener('click', () => {
-    downloadWorkbook(buildTemplateWorkbook(), 'modelo-controle-financeiro.xlsx');
-  });
-  document.getElementById('export-btn').addEventListener('click', () => {
-    downloadWorkbook(buildDataWorkbook(), 'controle-financeiro.xlsx');
-  });
-
-  document.getElementById('import-file').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const data = new Uint8Array(evt.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const accSheet = wb.Sheets['Contas'];
-        const txSheet = wb.Sheets['Lancamentos'];
-        const goalSheet = wb.Sheets['Metas'];
-        const instSheet = wb.Sheets['Parceladas'];
-        const fixedSheet = wb.Sheets['ContasFixas'];
-        const cardLoanSheet = wb.Sheets['EmprestimosCartao'];
-        const personLoanSheet = wb.Sheets['EmprestimosPessoais'];
-        if (!accSheet && !txSheet && !goalSheet && !instSheet && !fixedSheet && !cardLoanSheet && !personLoanSheet) {
-          showToast('Não encontrei as abas esperadas (Contas, Lancamentos, Metas) nessa planilha. Baixe o modelo para conferir o formato.', true);
-          return;
-        }
-        // Sem confirm() aqui de propósito: essa caixa de diálogo nativa do
-        // navegador não funciona dentro do artefato (fica travada sem
-        // resposta). A importação em si já é segura — só adiciona o que for
-        // novo, nunca apaga nem duplica nada — então segue direto, e o toast
-        // no fim resume o que foi adicionado.
-        const norm = s => String(s || '').trim().toLowerCase();
-
-        const importedAccounts = accSheet ? XLSX.utils.sheet_to_json(accSheet, { defval: '' })
-          .filter(r => String(r.Nome || '').trim())
-          .map(r => ({
-            id: uid(), name: String(r.Nome).trim(), bank: String(r.Banco || '').trim(), balance: Number(r.Saldo) || 0,
-            group: normalizeAccountGroup(r.Grupo || r['Grupo (Necessidades/Desejos/Investimento)'])
-          })) : [];
-
-        const importedTx = txSheet ? XLSX.utils.sheet_to_json(txSheet, { defval: '' })
-          .filter(r => String(r.Descricao || '').trim())
-          .map(r => ({
-            id: uid(),
-            month: String(r.Mes || currentMonthKey()).trim() || currentMonthKey(),
-            period: String(r.Quinzena).trim() === '1' ? 'q1' : 'q2',
-            type: String(r.Tipo).toLowerCase().startsWith('rec') ? 'income' : 'expense',
-            description: String(r.Descricao).trim(),
-            amount: Number(r.Valor) || 0,
-            category: r.Categoria ? String(r.Categoria).trim() : null
-          })) : [];
-
-        const importedGoals = goalSheet ? XLSX.utils.sheet_to_json(goalSheet, { defval: '' })
-          .filter(r => String(r.Nome || '').trim())
-          .map(r => ({ id: uid(), name: String(r.Nome).trim(), target: Number(r.ValorAlvo) || 0, current: Number(r.ValorAtual) || 0 })) : [];
-
-        const importedInstallments = instSheet ? XLSX.utils.sheet_to_json(instSheet, { defval: '' })
-          .filter(r => String(r.Descricao || '').trim())
-          .map(r => ({
-            id: uid(),
-            description: String(r.Descricao).trim(),
-            installmentValue: Number(r.ValorParcela) || 0,
-            totalInstallments: parseInt(r.TotalParcelas, 10) || 1,
-            paidInstallments: parseInt(r.ParcelasPagas, 10) || 0,
-            period: String(r.Vencimento || r['Vencimento (15 ou 30)']).trim() === '30' ? 'q2' : 'q1',
-            card: normalizeCard(r.Cartao || r['Cartao (Nubank/Santander)'] || r['Cartao (Nubank/Santander/Santander 2)']),
-            group: normalizeAccountGroup(r.Grupo || r['Grupo (Necessidades/Desejos/Investimento)'])
-          })) : [];
-
-        // Converte o texto da coluna "FormaPagamento" (ex.: "Débito", "Cartão
-        // Nubank") de volta para a chave interna usada pelo app.
-        function normalizePaymentMethodText(str) {
-          const s = norm(str);
-          if (!s) return 'pix';
-          if (s.includes('nubank')) return 'nubank';
-          if (s.includes('santander') && /2/.test(s)) return 'santander2';
-          if (s.includes('santander')) return 'santander';
-          if (s.includes('debit')) return 'debito';
-          if (s.includes('dinheiro')) return 'dinheiro';
-          return 'pix';
-        }
-
-        const importedFixed = fixedSheet ? XLSX.utils.sheet_to_json(fixedSheet, { defval: '' })
-          .filter(r => String(r.Descricao || '').trim())
-          .map(r => {
-            const freq = norm(r.Frequencia).startsWith('quinz') ? 'quinzenal' : 'mensal';
-            const quinzena = String(r.Quinzena || '').trim() === '30' ? 'q2' : 'q1';
-            return {
-              id: uid(),
-              description: String(r.Descricao).trim(),
-              amount: Number(r.Valor) || 0,
-              category: r.Categoria ? String(r.Categoria).trim() : null,
-              paymentMethod: normalizePaymentMethodText(r.FormaPagamento || r['FormaPagamento (Debito/Pix/Dinheiro/Cartao X)']),
-              frequency: freq,
-              period: freq === 'mensal' ? quinzena : null,
-              valueChanges: []
-            };
-          }) : [];
-
-        const importedCardLoans = cardLoanSheet ? XLSX.utils.sheet_to_json(cardLoanSheet, { defval: '' })
-          .filter(r => String(r.Pessoa || '').trim())
-          .map(r => ({
-            id: uid(),
-            person: String(r.Pessoa).trim(),
-            description: r.Descricao ? String(r.Descricao).trim() : '',
-            amount: Number(r.Valor) || 0,
-            card: normalizeCard(r.Cartao || r['Cartao (Nubank/Santander/Santander 2)']),
-            dueDate: String(r.Vencimento || '').trim(),
-            totalInstallments: Math.max(1, parseInt(r.TotalParcelas, 10) || 1),
-            paidInstallments: Math.max(0, parseInt(r.ParcelasPagas, 10) || 0),
-            payments: []
-          })) : [];
-
-        const importedPersonLoans = personLoanSheet ? XLSX.utils.sheet_to_json(personLoanSheet, { defval: '' })
-          .filter(r => String(r.Pessoa || '').trim())
-          .map(r => ({
-            id: uid(),
-            person: String(r.Pessoa).trim(),
-            description: r.Descricao ? String(r.Descricao).trim() : '',
-            amount: Number(r.Valor) || 0,
-            dateReceived: String(r.DataRecebimento || '').trim() || new Date().toISOString().slice(0, 10),
-            payments: []
-          })) : [];
-
-        // Compara cada item importado com o que já existe (por nome/descrição + principais campos)
-        // e só adiciona o que ainda não está cadastrado, sem apagar ou duplicar nada.
-        const existingAccKeys = new Set(state.accounts.map(a => `${norm(a.name)}|${norm(a.bank)}`));
-        const newAccounts = importedAccounts.filter(a => !existingAccKeys.has(`${norm(a.name)}|${norm(a.bank)}`));
-
-        const existingTxKeys = new Set(state.transactions.map(t => `${t.month}|${t.period}|${t.type}|${norm(t.description)}|${Number(t.amount).toFixed(2)}`));
-        const newTx = importedTx.filter(t => !existingTxKeys.has(`${t.month}|${t.period}|${t.type}|${norm(t.description)}|${Number(t.amount).toFixed(2)}`));
-
-        const existingGoalKeys = new Set(state.goals.map(g => norm(g.name)));
-        const newGoals = importedGoals.filter(g => !existingGoalKeys.has(norm(g.name)));
-
-        const existingInstKeys = new Set(state.installments.map(i => `${norm(i.description)}|${Number(i.installmentValue).toFixed(2)}|${i.totalInstallments}|${i.card}`));
-        const newInstallments = importedInstallments.filter(i => !existingInstKeys.has(`${norm(i.description)}|${Number(i.installmentValue).toFixed(2)}|${i.totalInstallments}|${i.card}`));
-
-        const existingFixedKeys = new Set(state.recurringExpenses.map(r => `${norm(r.description)}|${Number(r.amount).toFixed(2)}|${r.frequency}`));
-        const newFixed = importedFixed.filter(r => !existingFixedKeys.has(`${norm(r.description)}|${Number(r.amount).toFixed(2)}|${r.frequency}`));
-
-        const existingCardLoanKeys = new Set(state.cardLoans.map(c => `${norm(c.person)}|${norm(c.description)}|${Number(c.amount).toFixed(2)}|${c.card}`));
-        const newCardLoans = importedCardLoans.filter(c => !existingCardLoanKeys.has(`${norm(c.person)}|${norm(c.description)}|${Number(c.amount).toFixed(2)}|${c.card}`));
-
-        const existingPersonLoanKeys = new Set(state.personLoans.map(p => `${norm(p.person)}|${norm(p.description)}|${Number(p.amount).toFixed(2)}`));
-        const newPersonLoans = importedPersonLoans.filter(p => !existingPersonLoanKeys.has(`${norm(p.person)}|${norm(p.description)}|${Number(p.amount).toFixed(2)}`));
-
-        state.accounts = state.accounts.concat(newAccounts);
-        state.transactions = state.transactions.concat(newTx);
-        state.goals = state.goals.concat(newGoals);
-        state.installments = state.installments.concat(newInstallments);
-        state.recurringExpenses = state.recurringExpenses.concat(newFixed);
-        state.cardLoans = state.cardLoans.concat(newCardLoans);
-        state.personLoans = state.personLoans.concat(newPersonLoans);
-        save();
-        renderAll();
-        const addedTotal = newAccounts.length + newTx.length + newGoals.length + newInstallments.length + newFixed.length + newCardLoans.length + newPersonLoans.length;
-        if (addedTotal === 0) {
-          showToast('Nenhum item novo encontrado. Tudo que está nessa planilha já estava cadastrado.');
-        } else {
-          showToast(`Importação concluída. Adicionados: ${newAccounts.length} conta(s), ${newTx.length} lançamento(s), ${newGoals.length} meta(s), ${newInstallments.length} parcelada(s), ${newFixed.length} conta(s) fixa(s), ${newCardLoans.length + newPersonLoans.length} empréstimo(s).`);
-        }
-      } catch (err) {
-        showToast('Não foi possível ler essa planilha. Confira se ela segue o formato do modelo baixado.', true);
-      }
-      e.target.value = '';
-    };
-    reader.readAsArrayBuffer(file);
-  });
-
   // ---------- EXPORTAR / IMPORTAR (versão standalone, fora do Claude) ----------
   const pwaExportBtn = document.getElementById('pwa-export-btn');
   const pwaImportBtn = document.getElementById('pwa-import-btn');
@@ -6658,7 +6664,7 @@
     URL.revokeObjectURL(url);
     try { localStorage.setItem(LAST_EXPORT_KEY, String(Date.now())); } catch (e) {}
     renderExportReminder();
-    showToast(isEncrypted ? 'Arquivo criptografado baixado. Guarde-o num local seguro.' : 'Arquivo baixado. Guarde-o num local seguro.');
+    showToast(isEncrypted ? 'Backup criptografado baixado. Guarde-o num local seguro.' : 'Backup baixado. Guarde-o num local seguro.');
   });
 
   if (pwaImportBtn) pwaImportBtn.addEventListener('click', () => pwaImportFile.click());
@@ -6689,13 +6695,13 @@
           showToast('Arquivo inválido. Selecione um backup exportado por este app.', true);
           return;
         }
-        if (!confirm('Importar vai substituir TODOS os dados atuais deste aparelho pelos dados do arquivo. Continuar?')) return;
+        if (!confirm('Restaurar vai substituir TODOS os dados atuais pelos dados do backup. Continuar?')) return;
         state = incoming;
         normalizeState();
         save();
         renderAll();
         renderExportReminder();
-        showToast('Dados importados com sucesso.');
+        showToast('Backup restaurado com sucesso.');
       } catch (e) {
         showToast('Não foi possível ler esse arquivo.', true);
       } finally {
@@ -6764,8 +6770,34 @@
     const password = document.getElementById('lock-password-input').value;
     if (!password || !pendingEncryptedEnvelope) return;
     lockErrorEl.textContent = '';
+    const rememberedEmail = getRememberedCloudEmail();
+    const typedEmail = (document.getElementById('lock-email-input').value || '').trim();
+    if (rememberedEmail && !typedEmail) { lockErrorEl.textContent = 'Digite também o seu e-mail.'; return; }
     try {
       const { obj, key } = await decryptPayload(pendingEncryptedEnvelope, password);
+      // Conta ligada à nuvem: confere e-mail + senha de verdade no servidor.
+      // Sem internet, só aceita se o e-mail digitado for o da conta deste
+      // aparelho (a senha já foi conferida acima, ao abrir os dados).
+      if (rememberedEmail) {
+        if (typedEmail.toLowerCase() !== rememberedEmail.toLowerCase()) {
+          lockErrorEl.textContent = 'E-mail ou senha incorretos. Tente de novo.';
+          document.getElementById('lock-password-input').value = '';
+          return;
+        }
+        if (fbAvailable && navigator.onLine !== false) {
+          try {
+            const cred = await fbAuth.signInWithEmailAndPassword(typedEmail, password);
+            cloudUser = cred.user;
+          } catch (authErr) {
+            const c = authErr && authErr.code;
+            if (c !== 'auth/network-request-failed' && c !== 'auth/internal-error') {
+              lockErrorEl.textContent = 'E-mail ou senha incorretos. Tente de novo.';
+              document.getElementById('lock-password-input').value = '';
+              return;
+            }
+          }
+        }
+      }
       state = Object.assign(state, obj);
       normalizeState();
       encryptionKey = key;
@@ -6776,6 +6808,11 @@
       renderAll();
       renderExportReminder();
       renderEncryptionStatus();
+      updateCloudUI();
+      // Agora que temos a chave certa em mãos, se este aparelho já estava
+      // conectado a uma conta na nuvem (sessão de login preservada), volta a
+      // sincronizar automaticamente.
+      if (cloudUser) startCloudListener();
     } catch (err) {
       lockErrorEl.textContent = 'Senha incorreta. Tente de novo.';
       document.getElementById('lock-password-input').value = '';
@@ -6824,6 +6861,14 @@
     setTimeout(() => {
       if (appSplashEl) appSplashEl.classList.add('hidden');
       if (appLockEl) appLockEl.style.display = 'flex';
+      const lockEmail = document.getElementById('lock-email-input');
+      const savedEmail = getRememberedCloudEmail();
+      if (lockEmail && savedEmail) {
+        lockEmail.style.display = 'block';
+        lockEmail.value = savedEmail;
+        const sub = document.getElementById('lock-sub');
+        if (sub) sub.textContent = 'Digite seu e-mail e sua senha para entrar.';
+      }
       const input = document.getElementById('lock-password-input');
       if (input) input.focus();
     }, 1900);
