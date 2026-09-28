@@ -1713,7 +1713,7 @@
   .tab-btn { flex: 1 0 auto; padding-left: 10px; padding-right: 10px; font-size: 0.78rem; white-space: nowrap; }
   .combo { position: relative; }
   .combo-list {
-    display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60;
+    display: none; position: static; margin-top: 6px;
     max-height: min(320px, 46vh); overflow-y: auto; -webkit-overflow-scrolling: touch;
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.45);
@@ -1742,13 +1742,54 @@
   }
   .combo-tools button.danger { color: var(--negative); border-color: var(--negative); }
   .combo-create { width: 100%; text-align: left; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 12px; color: var(--accent); font-weight: 600; }
-  .combo-edit { display: flex; gap: 6px; padding: 10px 12px; align-items: center; }
-  .combo-edit input { flex: 1; min-width: 0; }
+  .combo-edit { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; align-items: center; }
+  .combo-edit input { flex: 1 1 100%; min-width: 0; }
   .proj-cat { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); padding: 3px 0; }
   .proj-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .proj-tools button { background: var(--bg); border: 1px solid var(--border); color: var(--ink); border-radius: 8px; padding: 9px 12px; font-family: inherit; font-size: 0.8rem; cursor: pointer; }
   .proj-tools button.danger { color: var(--negative); border-color: var(--negative); }
   .proj-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; background: var(--border); color: var(--muted); }
+
+  /* ===== Ajustes 2: empréstimos, chips de descrição, botões de projeto ===== */
+  .cl-actions button.cl-receive-btn {
+    display: block; width: 100%; margin-top: 10px; padding: 11px; border-radius: 10px; border: 1px solid #22c55e;
+    background: linear-gradient(135deg, #16a34a, #22c55e); color: #04140a; font-weight: 800; font-size: 0.86rem;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.28);
+  }
+  .cl-actions button.cl-receive-btn.open { background: var(--surface-2); color: var(--muted); border-color: var(--border); box-shadow: none; }
+  .cl-del-sep { margin-top: 22px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .cl-del-sep .pl-del-btn { margin-top: 0; }
+  .dchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+  .dchip {
+    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 9px 14px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--ink); font-family: inherit; font-size: 0.9rem;
+    font-weight: 600; cursor: pointer; transition: transform 100ms ease, background 140ms ease, border-color 140ms ease;
+  }
+  .dchip small { color: var(--muted); font-size: 0.68rem; font-weight: 500; }
+  .dchip:active { transform: scale(0.95); }
+  .dchip.on { background: linear-gradient(135deg, #7C4DFF, #00E5FF); border-color: transparent; color: #061014; }
+  .dchip.on small { color: #061014; opacity: 0.75; }
+  .dbar { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); }
+  .dbtn { background: var(--bg); border: 1px solid var(--border); color: var(--ink); border-radius: 10px; padding: 9px 14px; font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+  .dbtn-go { border-color: var(--accent); color: var(--accent); }
+  .proj-bar { height: 5px; border-radius: 999px; background: var(--border); margin-top: 8px; overflow: hidden; }
+  .proj-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7C4DFF, #00E5FF); transition: width 300ms ease; }
+  .proj-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .pbtn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); font-family: inherit;
+    font-size: 0.84rem; font-weight: 700; cursor: pointer; transition: transform 100ms ease, box-shadow 160ms ease, filter 160ms ease;
+  }
+  .pbtn:active { transform: scale(0.96); }
+  .pbtn-main { grid-column: 1 / -1; border: none; color: #061014; background: linear-gradient(120deg, #7C4DFF, #00E5FF); box-shadow: 0 6px 18px rgba(0, 229, 255, 0.25); }
+  .pbtn-edit { color: #00E5FF; border-color: rgba(0, 229, 255, 0.35); background: rgba(0, 229, 255, 0.08); }
+  .pbtn-done { color: #22c55e; border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.09); }
+  .pbtn-del { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.08); }
+  .pbtn-del.armed { background: #ff4d4d; color: #fff; border-color: #ff4d4d; box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.25); }
+  .proj-tx { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); padding: 5px 0; }
+  .proj-tx-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .proj-tx-val { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .proj-untag { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 3px 10px; font-family: inherit; font-size: 0.7rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -2293,8 +2334,12 @@
           </div>
         </div>
         <div>
-          <label for="cl-due">Cobrar até (antes da fatura vencer)</label>
-          <input id="cl-due" type="date">
+          <label for="cl-due-day">Cobrar até o dia (repete todo mês até acabar as parcelas)</label>
+          <input id="cl-due-day" type="number" min="1" max="31" inputmode="numeric" placeholder="Ex.: 10">
+        </div>
+        <div>
+          <label for="cl-due-month">Mês da primeira cobrança</label>
+          <input id="cl-due-month" type="month">
         </div>
         <div class="form-actions">
           <button type="button" id="cancel-cardloan">Cancelar</button>
@@ -2411,9 +2456,9 @@
 
   <nav class="tabbar">
     <button class="tab-btn active" data-tab="overview">Geral</button>
-    <button class="tab-btn" data-tab="accounts">Contas</button>
-    <button class="tab-btn" data-tab="flow">Fluxo</button>
     <button class="tab-btn" data-tab="projects">Projetos</button>
+    <button class="tab-btn" data-tab="flow">Fluxo</button>
+    <button class="tab-btn" data-tab="accounts">Contas</button>
     <button class="tab-btn" data-tab="goals">Metas</button>
     <button class="tab-btn" data-tab="loans">Empréstimos</button>
     <button class="tab-btn" data-tab="data">Dados</button>
@@ -2514,7 +2559,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '5.03.00';
+  const APP_VERSION = '5.04.00';
   const APP_VERSION_DATE = '28/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -2760,7 +2805,7 @@
   // corrente — evita que a última parcela "suma" da projeção quando a data
   // de cobrança está mais à frente do que o mês em que a página é aberta.
   function loanActiveInMonth(c, monthKey) {
-    const anchor = (c.dueDate && c.dueDate.slice(0, 7)) || currentMonthKey();
+    const anchor = (cardLoanNextDue(c) || '').slice(0, 7) || currentMonthKey();
     const diff = monthsBetweenKeys(anchor, monthKey);
     const remaining = cardLoanTotal(c) - cardLoanPaid(c);
     return diff >= 0 && diff < remaining;
@@ -3774,7 +3819,7 @@
     })) : 0;
     const maxLoan = activeLoans.length ? Math.max(...activeLoans.map(c => {
       const remaining = cardLoanTotal(c) - cardLoanPaid(c);
-      const anchor = (c.dueDate && c.dueDate.slice(0, 7)) || currentMonthKey();
+      const anchor = (cardLoanNextDue(c) || '').slice(0, 7) || currentMonthKey();
       const anchorDiff = Math.max(0, monthsBetweenKeys(currentMonthKey(), anchor));
       return anchorDiff + remaining;
     })) : 0;
@@ -4172,12 +4217,14 @@
   });
   document.getElementById('show-cardloan-form').addEventListener('click', () => {
     cardLoanForm.classList.add('open');
+    if (!document.getElementById('cl-due-month').value) document.getElementById('cl-due-month').value = currentMonthKey();
     document.getElementById('cl-person').focus({ preventScroll: true });
   });
   document.getElementById('cancel-cardloan').addEventListener('click', resetCardLoanForm);
   function resetCardLoanForm() {
     cardLoanForm.classList.remove('open');
-    ['cl-person', 'cl-desc', 'cl-value', 'cl-total', 'cl-paid', 'cl-due'].forEach(id => document.getElementById(id).value = '');
+    ['cl-person', 'cl-desc', 'cl-value', 'cl-total', 'cl-paid', 'cl-due-day'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('cl-due-month').value = currentMonthKey();
     clCard = 'nubank';
     document.querySelectorAll('#cl-card-seg button').forEach(x => x.classList.remove('active'));
     document.querySelector('#cl-card-seg button[data-card="nubank"]').classList.add('active');
@@ -4188,10 +4235,12 @@
     const amount = parseAmount(document.getElementById('cl-value').value);
     const total = parseInt(document.getElementById('cl-total').value, 10) || 1;
     const paid = parseInt(document.getElementById('cl-paid').value, 10) || 0;
-    const due = document.getElementById('cl-due').value;
+    const dueDay = Math.min(31, Math.max(1, parseInt(document.getElementById('cl-due-day').value, 10) || 0));
+    const hasDueDay = !!parseInt(document.getElementById('cl-due-day').value, 10);
+    const startMonth = document.getElementById('cl-due-month').value || currentMonthKey();
     if (!person || isNaN(amount) || amount <= 0) { showToast('Preencha quem te deve e um valor válido.', true); return; }
     state.cardLoans.push({
-      id: uid(), person, description: desc, amount, card: clCard, dueDate: due || '',
+      id: uid(), person, description: desc, amount, card: clCard, dueDate: '', dueDay: hasDueDay ? dueDay : null, startMonth,
       totalInstallments: Math.max(1, total),
       // Parcelas já pagas antes do cadastro (sem data/comprovante individual —
       // são "legado"); parcelas marcadas daqui pra frente entram em `payments`,
@@ -4206,6 +4255,28 @@
     document.getElementById('cardloans-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  // Próxima data de cobrança: cai no dia escolhido, no mês da primeira
+  // cobrança + quantas parcelas já foram recebidas. Ao receber uma parcela, o
+  // lembrete passa sozinho pro mês seguinte, até a última parcela.
+  // Empréstimos antigos (só com data fixa) continuam usando essa data.
+  function cardLoanNextDue(c) {
+    if (c.dueDay) {
+      const paid = cardLoanPaid(c);
+      const total = cardLoanTotal(c);
+      if (paid >= total) return '';
+      const mk = shiftMonthKey(c.startMonth || currentMonthKey(), paid);
+      const [y, m] = mk.split('-').map(Number);
+      const day = Math.min(c.dueDay, new Date(y, m, 0).getDate());
+      return `${mk}-${String(day).padStart(2, '0')}`;
+    }
+    return c.dueDate || '';
+  }
+  // A parcela desse empréstimo cai em "month"? (para "a receber no mês")
+  function cardLoanDueInMonth(c, month) {
+    if (cardLoanRemaining(c) <= 0) return false;
+    if (c.dueDay) return loanActiveInMonth(c, month);
+    return !!c.dueDate && c.dueDate.slice(0, 7) === month;
+  }
   // Compat: empréstimos antigos não tinham parcelas — trata como 1 parcela só.
   function cardLoanTotal(c) { return c.totalInstallments || 1; }
   function cardLoanLegacyPaid(c) {
@@ -4285,14 +4356,15 @@
     listEl.innerHTML = loans.slice().sort((a, b) => {
       const aDone = cardLoanDone(a), bDone = cardLoanDone(b);
       if (aDone !== bDone) return aDone ? 1 : -1;
-      return (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
+      return (cardLoanNextDue(a) || '9999').localeCompare(cardLoanNextDue(b) || '9999');
     }).map(c => {
       const badge = CARD_BADGE[c.card || 'nubank'];
       const total = cardLoanTotal(c);
       const paid = cardLoanPaid(c);
       const done = cardLoanDone(c);
       const remaining = cardLoanRemaining(c);
-      const dleft = daysUntil(c.dueDate);
+      const nextDue = cardLoanNextDue(c);
+      const dleft = daysUntil(nextDue);
       const isPaying = cardLoanPaying === c.id;
       const payments = c.payments || [];
       const legacyPaid = cardLoanLegacyPaid(c);
@@ -4310,7 +4382,7 @@
       } else {
         status = `Vence em ${dleft} dias`; statusClass = 'cl-neutral';
       }
-      const dueLabel = c.dueDate ? new Date(c.dueDate + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+      const dueLabel = nextDue ? new Date(nextDue + 'T00:00:00').toLocaleDateString('pt-BR') + (c.dueDay ? ` (todo dia ${c.dueDay})` : '') : '—';
       const segBar = total > 1 ? `<div class="inst-seg-bar">${Array.from({ length: total }, (_, idx) => {
         const isPaid = idx < paid;
         const t = total > 1 ? idx / (total - 1) : 0;
@@ -4357,7 +4429,7 @@
               ${historyHtml}
               <div class="cl-actions">
                 ${done ? `<button class="primary" data-cl-undo="${c.id}">Desfazer última parcela</button>` : ''}
-                ${!done ? `<button type="button" class="pl-pay-btn ${isPaying ? 'open' : ''}" data-cl-pay="${c.id}">${isPaying ? 'Cancelar' : (total > 1 ? 'Marcar parcela recebida' : 'Marcar como recebido')}</button>` : ''}
+                ${!done ? `<button type="button" class="pl-pay-btn cl-receive-btn ${isPaying ? 'open' : ''}" data-cl-pay="${c.id}">${isPaying ? 'Cancelar' : (total > 1 ? 'Marcar parcela recebida' : 'Marcar como recebido')}</button>` : ''}
               </div>
               ${isPaying ? `
                 ${state.accounts.length > 0 ? `
@@ -4380,7 +4452,7 @@
                 </div>
                 <div class="pl-pay-receipt-name" id="cl-pay-receipt-name-${c.id}"></div>
               ` : ''}
-              <button type="button" class="pl-del-btn" data-cl-del="${c.id}">Excluir empréstimo</button>
+              <div class="cl-del-sep"><button type="button" class="pl-del-btn" data-cl-del="${c.id}">Excluir empréstimo</button></div>
             </div>
           </details>
         </div>
@@ -4862,7 +4934,7 @@
     })) : 0;
     const maxLoan = activeLoans.length ? Math.max(...activeLoans.map(c => {
       const remaining = cardLoanTotal(c) - cardLoanPaid(c);
-      const anchor = (c.dueDate && c.dueDate.slice(0, 7)) || currentMonthKey();
+      const anchor = (cardLoanNextDue(c) || '').slice(0, 7) || currentMonthKey();
       const anchorDiff = Math.max(0, monthsBetweenKeys(currentMonthKey(), anchor));
       return anchorDiff + remaining;
     })) : 0;
@@ -5586,6 +5658,18 @@
     // ao excluir — senão o saldo fica "adiantado" indevidamente.
     if (t && transactionAffectsAccount(t)) applyAccountDelta(t.accountId, t.type, -t.amount);
     state.transactions = state.transactions.filter(t => t.id !== id);
+    // Se esse lançamento veio de uma parcela de empréstimo, a parcela também
+    // some do empréstimo (e ele volta a ficar "em aberto" naquela parcela).
+    if (t && t.cardLoanPaymentId) {
+      state.cardLoans = state.cardLoans.map(c => (c.payments || []).some(p => p.id === t.cardLoanPaymentId)
+        ? Object.assign({}, c, { payments: c.payments.filter(p => p.id !== t.cardLoanPaymentId) }) : c);
+      showToast('Parcela também removida do empréstimo.');
+    }
+    if (t && t.personLoanPaymentId) {
+      state.personLoans = state.personLoans.map(l => (l.payments || []).some(p => p.id === t.personLoanPaymentId)
+        ? Object.assign({}, l, { payments: l.payments.filter(p => p.id !== t.personLoanPaymentId) }) : l);
+      showToast('Pagamento também removido do empréstimo.');
+    }
     save(); renderAll();
   }
 
@@ -5631,7 +5715,7 @@
       const paymentMethod = r.paymentMethod || 'pix';
       const paymentLabel = paymentMethodLabel(paymentMethod) || 'Pix';
       const paymentBadge = `${paymentIconHtml(paymentMethod)} `;
-      const catIcon = categoryIconHtml(r.category || 'Outros') + ' ';
+      const catIcon = '';
       rowsHtml += `
         <div class="row">
           <div class="row-main">
@@ -5662,7 +5746,7 @@
       const paymentMethod = t.paymentMethod || (t.type === 'expense' ? 'debito' : null);
       const paymentLabel = paymentMethod ? (paymentMethodLabel(paymentMethod) || 'Débito') : '';
       const paymentBadge = paymentMethod ? `${paymentIconHtml(paymentMethod)} ` : `${incomeIconHtml()} `;
-      const catIcon = (!opts.hideTitle && t.type === 'expense') ? categoryIconHtml(t.category || 'Outros') + ' ' : '';
+      const catIcon = '';
       const dateLabel = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' · ' : '';
       const isEditing = editingTxId === t.id;
       const txProj = t.projectId ? (state.projects || []).find(p => p.id === t.projectId) : null;
@@ -5675,12 +5759,13 @@
             <div class="row-sub">${dateLabel}${t.type === 'expense' ? escapeHtml(t.category || 'Outros') + ' · ' + paymentBadge + escapeHtml(paymentLabel) + projLabel : (paymentBadge + (t.isInvestment ? 'Receita · Investimento' : 'Receita'))}</div>
             <div class="row-actions">
               ${isEditing ? `
+                ${t.type === 'expense' ? `<div style="width:100%; margin:0 0 8px;"><label style="display:block; font-size:0.72rem; color:var(--muted); margin-bottom:4px;" for="tx-edit-project-${t.id}">Projeto</label><select id="tx-edit-project-${t.id}" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:16px;"><option value="">Sem projeto</option>${state.projects.filter(p => p.status !== 'done' || p.id === t.projectId).map(p => `<option value="${p.id}" ${p.id === t.projectId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></div>` : ''}
                 <div class="pl-pay-row" style="width:100%; margin:0;">
                   <input type="text" inputmode="decimal" id="tx-edit-value-${t.id}" value="${String(t.amount).replace('.', ',')}" placeholder="0,00">
                   <button type="button" class="pl-pay-confirm" data-tx-edit-confirm="${t.id}">Salvar</button>
                 </div>
               ` : `
-                <button class="primary" data-edit-tx="${t.id}">Alterar valor</button>
+                <button class="primary" data-edit-tx="${t.id}">${t.type === 'expense' ? 'Alterar valor/projeto' : 'Alterar valor'}</button>
                 <button class="danger" data-del-tx="${t.id}">Excluir</button>
               `}
             </div>
@@ -5710,7 +5795,7 @@
       }
       const total = group.reduce((s, t) => s + t.amount, 0);
       const type = group[0].type;
-      const catIcon = type === 'expense' ? categoryIconHtml(group[0].category || 'Outros') + ' ' : '';
+      const catIcon = '';
       rowsHtml += `
         <div class="inst-row">
           <details class="inst-details">
@@ -5759,6 +5844,8 @@
     // entre o valor antigo e o novo, pra não contar o valor errado duas vezes.
     if (transactionAffectsAccount(t)) applyAccountDelta(t.accountId, t.type, amount - t.amount);
     t.amount = amount;
+    const projSel = document.getElementById('tx-edit-project-' + id);
+    if (projSel && t.type === 'expense') t.projectId = projSel.value || null;
     // Data (opcional): só alguns lugares (ex.: histórico de Renda fixa)
     // mostram um campo de data junto do valor na edição.
     const dateInp = document.getElementById('tx-edit-date-' + id);
@@ -5804,7 +5891,9 @@
     input.addEventListener('click', api.open);
     input.addEventListener('input', api.open);
     input.addEventListener('keydown', (e) => { if (e.key === 'Escape') api.close(); });
-    document.addEventListener('pointerdown', (e) => { if (!wrap.contains(e.target)) api.close(); });
+    // Fecha ao tocar fora, mas só depois do clique acontecer (a lista empurra o
+    // conteúdo; fechar antes faria o botão tocado sair do lugar).
+    document.addEventListener('click', (e) => { if (!e.composedPath().includes(wrap)) api.close(); });
     // Evita que tocar na lista tire o foco do campo (exceto nos campos de edição).
     panel.addEventListener('mousedown', (e) => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
     panel.addEventListener('click', (e) => {
@@ -5857,25 +5946,39 @@
       .sort((x, y) => (y.monthTxs.length - x.monthTxs.length) || (y.txs.length - x.txs.length) || x.name.localeCompare(y.name, 'pt-BR'));
   }
 
+  let descMode = 'chips';      // 'chips' (escolher rápido) ou 'manage' (editar/apagar/ver lançamentos)
+  let descCreating = false;    // mini-formulário "Nova descrição" aberto
   function renderDescList(typed) {
     const t = String(typed || '').trim().toLowerCase();
     const all = getDescGroups();
     const groups = all.filter(g => !t || g.key.includes(t));
-    let html = '';
-    if (t && !all.some(g => g.key === t)) {
-      html += `<button type="button" class="combo-create" data-act="create" data-key="${escapeHtml(String(typed).trim())}">+ Criar descrição “${escapeHtml(String(typed).trim())}”</button>`;
-    }
-    if (!groups.length && !html) {
-      return '<div class="combo-empty">Nenhuma descrição ainda. Digite um nome e ele será criado ao salvar o lançamento.</div>';
-    }
     const sign = flowType === 'expense' ? '-' : '+';
+    const current = document.getElementById('flow-desc').value.trim().toLowerCase();
+    let html = '';
+    if (descMode === 'chips') {
+      html += `<div class="dchips">`;
+      if (!groups.length) html += `<div class="combo-empty">${all.length ? 'Nenhuma descrição com esse texto.' : 'Nenhuma descrição ainda. Toque em “+ Nova descrição”.'}</div>`;
+      groups.forEach(g => {
+        const monthSum = g.monthTxs.reduce((s, x) => s + x.amount, 0);
+        html += `<button type="button" class="dchip${g.key === current ? ' on' : ''}" data-act="pick" data-key="${escapeHtml(g.key)}">${escapeHtml(g.name)}${monthSum ? `<small>${currency.format(monthSum)}</small>` : ''}</button>`;
+      });
+      html += `</div>`;
+      if (descCreating) {
+        html += `<div class="combo-edit"><input type="text" id="desc-new-input" placeholder="Nome da nova descrição" value="${escapeHtml(String(typed || '').trim())}" autocomplete="off"><button type="button" class="dbtn dbtn-go" data-act="new-save">Criar</button><button type="button" class="dbtn" data-act="new-cancel">Cancelar</button></div>`;
+      }
+      html += `<div class="dbar"><button type="button" class="dbtn dbtn-go" data-act="new">+ Nova descrição</button><button type="button" class="dbtn" data-act="manage">Gerenciar</button><button type="button" class="dbtn" data-act="close" style="margin-left:auto;">Fechar</button></div>`;
+      return html;
+    }
+    // Modo gerenciar: soma por nome, setinha mostra cada lançamento, editar/apagar.
+    html += `<div class="dbar" style="border-top:none; border-bottom:1px solid var(--border);"><button type="button" class="dbtn" data-act="chips">← Voltar</button><span style="color:var(--muted); font-size:0.78rem; align-self:center;">Total do mês aberto no Fluxo</span></div>`;
+    if (!groups.length) return html + '<div class="combo-empty">Nenhuma descrição para gerenciar.</div>';
     groups.forEach(g => {
       const monthSum = g.monthTxs.reduce((s, x) => s + x.amount, 0);
       const open = descExpanded.has(g.key);
       const sub = `${g.monthTxs.length} neste mês · ${g.txs.length} no total`;
       html += `<div class="combo-item">`;
       if (descEditingKey === g.key) {
-        html += `<div class="combo-edit"><input type="text" id="desc-rename-input" value="${escapeHtml(g.name)}" autocomplete="off"><button type="button" class="combo-create" style="width:auto; border:1px solid var(--border); border-radius:8px;" data-act="rename-save" data-key="${escapeHtml(g.key)}">Salvar</button><button type="button" class="combo-create" style="width:auto; border:1px solid var(--border); border-radius:8px; color:var(--muted);" data-act="rename-cancel" data-key="${escapeHtml(g.key)}">Cancelar</button></div>`;
+        html += `<div class="combo-edit"><input type="text" id="desc-rename-input" value="${escapeHtml(g.name)}" autocomplete="off"><button type="button" class="dbtn dbtn-go" data-act="rename-save" data-key="${escapeHtml(g.key)}">Salvar</button><button type="button" class="dbtn" data-act="rename-cancel" data-key="${escapeHtml(g.key)}">Cancelar</button></div>`;
       } else {
         html += `<div class="combo-row">
           <button type="button" class="combo-pick" data-act="pick" data-key="${escapeHtml(g.key)}">${escapeHtml(g.name)}<small>${sub}</small></button>
@@ -5933,16 +6036,29 @@
       const g = getDescGroups().find(x => x.key === key);
       api.input.value = g ? g.name : key;
       api.close();
-    } else if (act === 'create') {
-      const name = key.trim();
-      if (name) {
-        if (!state.descriptions.some(n => n.trim().toLowerCase() === name.toLowerCase())) state.descriptions.push(name);
-        state.hiddenDescriptions = state.hiddenDescriptions.filter(n => n.trim().toLowerCase() !== name.toLowerCase());
-        save();
-        api.input.value = name;
-        showToast('Descrição criada.');
-      }
+    } else if (act === 'close') {
       api.close();
+    } else if (act === 'new') {
+      descCreating = true; api.refresh();
+      const inp = document.getElementById('desc-new-input');
+      if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+    } else if (act === 'new-cancel') {
+      descCreating = false; api.refresh();
+    } else if (act === 'new-save') {
+      const inp = document.getElementById('desc-new-input');
+      const name = inp ? inp.value.trim() : '';
+      if (!name) { showToast('Digite o nome da descrição.', true); return; }
+      if (!state.descriptions.some(n => n.trim().toLowerCase() === name.toLowerCase())) state.descriptions.push(name);
+      state.hiddenDescriptions = state.hiddenDescriptions.filter(n => n.trim().toLowerCase() !== name.toLowerCase());
+      save();
+      api.input.value = name;
+      descCreating = false;
+      api.close();
+      showToast('Descrição criada.');
+    } else if (act === 'manage') {
+      descMode = 'manage'; descCreating = false; api.refresh();
+    } else if (act === 'chips') {
+      descMode = 'chips'; descEditingKey = null; descDeletingKey = null; api.refresh();
     } else if (act === 'toggle') {
       if (descExpanded.has(key)) descExpanded.delete(key); else descExpanded.add(key);
       descDeletingKey = null;
@@ -5975,6 +6091,12 @@
   }
 
   // ---------- PROJETOS ----------
+  const _ic = (d) => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ICON_PLUS = _ic('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>');
+  const ICON_PENCIL = _ic('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>');
+  const ICON_CHECK = _ic('<polyline points="20 6 9 17 4 12"/>');
+  const ICON_UNDO = _ic('<polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/>');
+  const ICON_TRASH = _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V3h6v3"/>');
   const projOpen = new Set();
   let projEditingId = null;
   let projDeletingId = null;
@@ -6012,7 +6134,7 @@
         .map(([c, v]) => `<div class="proj-cat"><span>${escapeHtml(c)}</span><span>${currency.format(v)}</span></div>`).join('');
       const txHtml = txs.map(t => {
         const d = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
-        return `<div class="combo-tx"><span>${d} · ${escapeHtml(t.description)}</span><span>- ${currency.format(t.amount)}</span></div>`;
+        return `<div class="proj-tx"><span class="proj-tx-name">${d} · ${escapeHtml(t.description)}</span><span class="proj-tx-val">- ${currency.format(t.amount)}</span><button type="button" class="proj-untag" data-pact="untag" data-pid="${p.id}" data-tid="${t.id}" title="Tirar esta despesa do projeto (ela continua no Fluxo)">Tirar</button></div>`;
       }).join('');
       const editing = projEditingId === p.id;
       return `
@@ -6023,20 +6145,21 @@
                 <div class="inst-name">${escapeHtml(p.name)}${p.status === 'done' ? '<span class="proj-badge">Concluído</span>' : ''}</div>
                 <div class="inst-count" style="color:var(--negative);">- ${currency.format(total)}</div>
               </div>
-              <div class="inst-sub">${txs.length} despesa(s)</div>
+              <div class="inst-sub">${txs.length} despesa(s)${grand > 0 ? ' · ' + Math.round(total / grand * 100) + '% dos projetos' : ''}</div>
+              <div class="proj-bar"><span style="width:${grand > 0 ? Math.round(total / grand * 100) : 0}%"></span></div>
             </summary>
             <div class="inst-expanded">
               ${txs.length ? `<p class="inst-expanded-label">Por categoria</p>${catsHtml}<p class="inst-expanded-label">Despesas</p>${txHtml}` : '<p class="inst-expanded-label">Nenhuma despesa neste projeto ainda.</p>'}
               ${editing ? `
                 <div class="combo-edit" style="padding:12px 0 0;"><input type="text" id="proj-rename-input" value="${escapeHtml(p.name)}" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:16px;">
                 <button type="button" class="primary" data-pact="rename-save" data-pid="${p.id}">Salvar</button></div>` : ''}
-              <div class="proj-tools">
-                ${p.status === 'done' ? '' : `<button type="button" data-pact="add" data-pid="${p.id}">+ Adicionar despesa</button>`}
-                <button type="button" data-pact="rename" data-pid="${p.id}">Renomear</button>
-                <button type="button" data-pact="status" data-pid="${p.id}">${p.status === 'done' ? 'Reabrir' : 'Marcar como concluído'}</button>
+              <div class="proj-actions">
+                ${p.status === 'done' ? '' : `<button type="button" class="pbtn pbtn-main" data-pact="add" data-pid="${p.id}">${ICON_PLUS}<span>Adicionar despesa</span></button>`}
+                <button type="button" class="pbtn pbtn-edit" data-pact="rename" data-pid="${p.id}">${ICON_PENCIL}<span>Renomear</span></button>
+                <button type="button" class="pbtn pbtn-done" data-pact="status" data-pid="${p.id}">${p.status === 'done' ? ICON_UNDO + '<span>Reabrir</span>' : ICON_CHECK + '<span>Concluir</span>'}</button>
                 ${projDeletingId === p.id
-                  ? `<button type="button" class="danger" data-pact="del-confirm" data-pid="${p.id}">Confirmar exclusão</button>`
-                  : `<button type="button" class="danger" data-pact="del" data-pid="${p.id}">Excluir projeto</button>`}
+                  ? `<button type="button" class="pbtn pbtn-del armed" data-pact="del-confirm" data-pid="${p.id}">${ICON_TRASH}<span>Confirmar exclusão</span></button>`
+                  : `<button type="button" class="pbtn pbtn-del" data-pact="del" data-pid="${p.id}">${ICON_TRASH}<span>Excluir</span></button>`}
               </div>
               ${projDeletingId === p.id ? '<p class="inst-expanded-label">As despesas continuam no Fluxo e no saldo; elas só deixam de estar ligadas a este projeto.</p>' : ''}
             </div>
@@ -6062,6 +6185,9 @@
       renderFlowProjectOptions();
       document.getElementById('flow-project').value = id;
       flowForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (act === 'untag') {
+      const tx = state.transactions.find(x => x.id === btn.dataset.tid);
+      if (tx) { tx.projectId = null; save(); renderAll(); showToast('Despesa tirada do projeto.'); }
     } else if (act === 'rename') {
       projEditingId = id; renderProjects();
       const inp = document.getElementById('proj-rename-input');
@@ -6601,7 +6727,7 @@
       const loanByCardMonth = {};
       Object.keys(CARD_META).forEach(card => { loanByCardMonth[card] = 0; });
       (state.cardLoans || []).forEach(c => {
-        if (cardLoanRemaining(c) <= 0 || !c.dueDate || c.dueDate.slice(0, 7) !== month) return;
+        if (!cardLoanDueInMonth(c, month)) return;
         const card = c.card || 'nubank';
         loanByCardMonth[card] = (loanByCardMonth[card] || 0) + c.amount;
       });
@@ -6647,7 +6773,7 @@
     // selecionado — só a parcela do mês (c.amount), não o total das parcelas
     // que ainda faltam (isso já aparece na aba Empréstimos).
     const cardLoanReceivableMonth = (state.cardLoans || [])
-      .filter(c => cardLoanRemaining(c) > 0 && c.dueDate && c.dueDate.slice(0, 7) === month)
+      .filter(c => cardLoanDueInMonth(c, month))
       .reduce((s, c) => s + c.amount, 0);
     document.getElementById('ov-cardloan-receivable').textContent = currency.format(cardLoanReceivableMonth);
     document.getElementById('ov-cardloan-receivable-lbl').textContent = `A receber (cartão) ${monthLabel}`;
