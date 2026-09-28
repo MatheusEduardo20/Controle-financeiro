@@ -358,6 +358,12 @@
     box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
   }
   .pm-icon svg { width: 12px; height: 12px; display: block; }
+  .cat-icon {
+    display: inline-block;
+    font-size: 0.95em;
+    vertical-align: middle;
+    margin-right: 1px;
+  }
   .card-badge-btn {
     position: absolute;
     inset: -6px;
@@ -1235,6 +1241,65 @@
     line-height: 1.4;
     color: var(--muted);
   }
+  /* Seletor de categoria em grade de ícones (substitui o <select> comprido) */
+  .cat-group-seg {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .cat-group-seg button {
+    flex: 1;
+    padding: 7px 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .cat-group-seg button.active {
+    background: linear-gradient(135deg, var(--gold, #D4AF37), var(--accent));
+    color: #1a1a1a;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(212,175,55,0.35);
+  }
+  .cat-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .cat-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2, var(--bg));
+    color: var(--ink);
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cat-chip:active { transform: scale(0.96); }
+  .cat-chip.active {
+    border-color: var(--gold, #D4AF37);
+    box-shadow: 0 0 0 1px var(--gold, #D4AF37), 0 3px 10px rgba(212,175,55,0.25);
+  }
+  .cat-chip-icon { font-size: 1.3rem; line-height: 1; }
+  .cat-chip-label {
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.2;
+    color: var(--muted);
+  }
+  .cat-chip.active .cat-chip-label { color: var(--ink); font-weight: 600; }
   .form-actions {
     display: flex;
     gap: 10px;
@@ -1956,34 +2021,20 @@
           <p class="group-hint">O saldo dessa conta é atualizado automaticamente com esse lançamento.</p>
         </div>
         <div id="flow-category-wrap">
-          <label for="flow-category">Categoria</label>
-          <select id="flow-category">
-            <optgroup label="Necessidades (50%)">
-              <option>Moradia</option>
-              <option>Contas de consumo</option>
-              <option>Supermercado/Alimentação</option>
-              <option>Saúde</option>
-              <option>Transporte</option>
-              <option>Cuidados pessoais</option>
-            </optgroup>
-            <optgroup label="Desejos (30%)">
-              <option>Lazer/Entretenimento</option>
-              <option>Compras</option>
-              <option>Comer fora/Restaurante</option>
-              <option>Assinaturas</option>
-            </optgroup>
-            <optgroup label="Guardar/Investir (20%)">
-              <option>Aposentadoria</option>
-              <option>Emergências</option>
-              <option>Investimentos</option>
-              <option>Quitação de dívidas</option>
-            </optgroup>
-            <option>Outros</option>
-          </select>
+          <label>Categoria</label>
+          <div class="cat-group-seg" id="cat-group-seg">
+            <button type="button" data-cat-group="necessidades" class="active">Necessidades</button>
+            <button type="button" data-cat-group="desejos">Desejos</button>
+            <button type="button" data-cat-group="guardar">Guardar</button>
+            <button type="button" data-cat-group="outros">Outros</button>
+          </div>
+          <div class="cat-picker-grid" id="cat-picker-grid"></div>
+          <select id="flow-category" style="display:none;"></select>
         </div>
         <div>
           <label for="flow-desc">Descrição <span style="color:var(--muted); font-weight:400;">(opcional)</span></label>
-          <input id="flow-desc" type="text" placeholder="Ex.: Supermercado">
+          <input id="flow-desc" type="text" placeholder="Ex.: Supermercado" list="flow-desc-suggestions" autocomplete="off">
+          <datalist id="flow-desc-suggestions"></datalist>
         </div>
         <details id="flow-advanced">
           <summary style="cursor:pointer; color:var(--muted); font-size:0.82rem; margin:4px 0;">Data (opcional)</summary>
@@ -2377,7 +2428,7 @@
   // Versionamento: número principal (ex.: 1.xx → 2.xx) só muda em atualização
   // significativa (novo recurso, mudança de design/configuração). O número
   // após o ponto (ex.: 1.00 → 1.01) sobe a cada correção/ajuste pequeno.
-  const APP_VERSION = '4.50.00';
+  const APP_VERSION = '5.00.00';
   const APP_VERSION_DATE = '22/09/2026';
   (function () {
     const el = document.getElementById('app-version-label');
@@ -2403,6 +2454,39 @@
     'Emergências': 'guardar',
     'Investimentos': 'guardar',
     'Quitação de dívidas': 'guardar'
+  };
+  // Ícone de cada categoria (mostrado na frente de toda compra no fluxo).
+  // Um emoji simples é a forma mais confiável de garantir que sempre
+  // apareça algo, em qualquer aparelho, sem depender de imagem carregando.
+  const CATEGORY_ICON = {
+    'Moradia': '🏠',
+    'Contas de consumo': '💡',
+    'Supermercado/Alimentação': '🛒',
+    'Saúde': '💊',
+    'Transporte': '🚗',
+    'Cuidados pessoais': '🧴',
+    'Lazer/Entretenimento': '🎮',
+    'Compras': '🛍️',
+    'Comer fora/Restaurante': '🍽️',
+    'Assinaturas': '📱',
+    'Aposentadoria': '👴',
+    'Emergências': '🧯',
+    'Investimentos': '📈',
+    'Quitação de dívidas': '💳',
+    'Outros': '🔖'
+  };
+  function categoryIconHtml(category) {
+    const icon = CATEGORY_ICON[category] || CATEGORY_ICON['Outros'];
+    return `<span class="cat-icon" title="${escapeHtml(category || 'Outros')}">${icon}</span>`;
+  }
+  // Categorias organizadas por grupo (mesma divisão 50/30/20 de sempre),
+  // usada pelo novo seletor em grade de ícones — mais compacto e rápido de
+  // escolher do que a lista comprida de antes.
+  const CATEGORIES_BY_GROUP = {
+    necessidades: ['Moradia', 'Contas de consumo', 'Supermercado/Alimentação', 'Saúde', 'Transporte', 'Cuidados pessoais'],
+    desejos: ['Lazer/Entretenimento', 'Compras', 'Comer fora/Restaurante', 'Assinaturas'],
+    guardar: ['Aposentadoria', 'Emergências', 'Investimentos', 'Quitação de dívidas'],
+    outros: ['Outros']
   };
   const GROUP_META = {
     necessidades: { label: 'Necessidades', target: 50, varName: '--accent' },
@@ -2518,11 +2602,25 @@
   function cashIconHtml() {
     return `<span class="pm-icon" style="background:#D4AF37;" title="Dinheiro"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#D4AF37"/><circle cx="12" cy="12" r="9" fill="#1a1a1a"/><text x="12" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#D4AF37">$</text></svg></span>`;
   }
+  // Ícone do débito: fundo azul-acinzentado com um cartão simples desenhado
+  // em branco, pra diferenciar visualmente do cartão de crédito (que usa a
+  // logo real do banco) e do dinheiro/Pix.
+  function debitIconHtml() {
+    return `<span class="pm-icon" style="background:#5C6B8A;" title="Débito"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="5.5" width="19" height="13" rx="2" fill="#fff"/><rect x="2.5" y="8.5" width="19" height="3" fill="#5C6B8A"/><rect x="4.5" y="14.5" width="6" height="1.8" rx="0.9" fill="#5C6B8A"/></svg></span>`;
+  }
+  // Ícone da receita/depósito: seta apontando pra dentro de um círculo verde,
+  // usado quando o lançamento é uma receita (não tem "forma de pagamento").
+  function incomeIconHtml() {
+    return `<span class="pm-icon" style="background:#2E9E5B;" title="Receita"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M7 12l5 5 5-5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+  }
+  // Sempre devolve algum ícone — nenhuma compra ou depósito deve ficar sem
+  // logo na frente, nem quando lançada manualmente, nem quando importada de
+  // uma planilha.
   function paymentIconHtml(pm) {
     if (isCardPayment(pm)) return cardLogoHtml(pm);
     if (pm === 'pix') return pixIconHtml();
     if (pm === 'dinheiro') return cashIconHtml();
-    return '';
+    return debitIconHtml();
   }
   let expandedCardBreakdowns = new Set();
   let futureExpensesOpen = false;
@@ -3077,6 +3175,26 @@
     save(); renderAll();
   }
 
+  // Alterar descrição e valor da parcela de uma compra parcelada no cartão
+  // (antes só dava pra mudar o mês, o grupo e marcar parcelas pagas —
+  // faltava poder corrigir o nome da compra ou o valor lançado errado).
+  let editingInstallmentId = null;
+  function confirmEditInstallment(id) {
+    const inst = state.installments.find(i => i.id === id);
+    if (!inst) return;
+    const descInp = document.getElementById('inst-edit-desc-' + id);
+    const valInp = document.getElementById('inst-edit-value-' + id);
+    const desc = descInp ? descInp.value.trim() : inst.description;
+    const value = parseAmount(valInp ? valInp.value : '');
+    if (!desc) { showToast('A descrição não pode ficar em branco.', true); return; }
+    if (isNaN(value) || value <= 0) { showToast('Informe um valor de parcela válido.', true); return; }
+    inst.description = desc;
+    inst.installmentValue = value;
+    editingInstallmentId = null;
+    save(); renderAll();
+    showToast('Compra parcelada atualizada!');
+  }
+
   function renderInstallments() {
     const el = document.getElementById('installments-list');
     if (state.installments.length === 0) {
@@ -3116,6 +3234,16 @@
               <div class="inst-sub"><span class="subgroup-dot" style="background:var(${groupMeta.varName})"></span> ${groupMeta.label} · ${cardLogoHtml(inst.card)} ${CARD_META[inst.card || 'nubank']} · ${currency.format(inst.installmentValue)} por parcela · vence dia ${inst.period === 'q1' ? '15' : '30'} · ${done ? 'quitada' : 'faltam ' + currency.format(remaining)}${startNote}</div>
             </summary>
             <div class="inst-expanded">
+              <p class="inst-expanded-label">Descrição e valor da parcela</p>
+              ${editingInstallmentId === inst.id ? `
+                <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+                  <input type="text" id="inst-edit-desc-${inst.id}" value="${escapeHtml(inst.description)}" placeholder="Descrição" style="width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.85rem;">
+                  <input type="text" inputmode="decimal" id="inst-edit-value-${inst.id}" value="${String(inst.installmentValue).replace('.', ',')}" placeholder="Valor por parcela (0,00)" style="width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.85rem;">
+                  <button type="button" class="primary" data-inst-edit-confirm="${inst.id}">Salvar alterações</button>
+                </div>
+              ` : `
+                <button type="button" class="primary" data-inst-edit="${inst.id}" style="margin-bottom:10px;">Alterar descrição/valor</button>
+              `}
               <p class="inst-expanded-label">Mês da 1ª parcela (a próxima a pagar)</p>
               <input type="month" data-inst-start-month="${inst.id}" value="${inst.startMonth || currentMonthKey()}" style="width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.85rem; margin-bottom:10px;">
               <p class="inst-expanded-label">Trocar grupo</p>
@@ -3134,6 +3262,17 @@
     el.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => toggleInstallmentFlag(b.dataset.toggle, parseInt(b.dataset.idx, 10))));
     el.querySelectorAll('[data-set-group]').forEach(b => b.addEventListener('click', () => changeInstallmentGroup(b.dataset.setGroup, b.dataset.group)));
     el.querySelectorAll('[data-del-inst]').forEach(b => b.addEventListener('click', () => deleteInstallment(b.dataset.delInst)));
+    el.querySelectorAll('[data-inst-edit]').forEach(b => b.addEventListener('click', (e) => {
+      e.preventDefault();
+      editingInstallmentId = b.dataset.instEdit;
+      renderAll();
+      const inp = document.getElementById('inst-edit-desc-' + editingInstallmentId);
+      if (inp) inp.focus();
+    }));
+    el.querySelectorAll('[data-inst-edit-confirm]').forEach(b => b.addEventListener('click', (e) => {
+      e.preventDefault();
+      confirmEditInstallment(b.dataset.instEditConfirm);
+    }));
     el.querySelectorAll('[data-inst-start-month]').forEach(input => input.addEventListener('change', () => {
       const inst = state.installments.find(i => i.id === input.dataset.instStartMonth);
       if (!inst || !input.value) return;
@@ -4915,6 +5054,51 @@
     const affects = flowType === 'income' || !isCardPayment(paymentMethod);
     wrap.style.display = affects && state.accounts.length > 0 ? 'block' : 'none';
   }
+  // ---------- SELETOR DE CATEGORIA (grade de ícones) ----------
+  // Antes era uma lista comprida (<select> com 15 opções, precisava rolar).
+  // Agora é uma grade compacta: escolhe o grupo (Necessidades/Desejos/
+  // Guardar/Outros) numa aba pequena em cima, e vê só as poucas categorias
+  // daquele grupo, cada uma com um ícone. O <select> escondido continua
+  // guardando o valor de verdade, só pra não precisar reescrever o resto do
+  // código que já lê/grava a categoria dali.
+  let flowCategoryGroup = 'necessidades';
+  function populateFlowCategorySelect() {
+    const select = document.getElementById('flow-category');
+    if (select.options.length) return;
+    const all = CATEGORIES_BY_GROUP.necessidades.concat(CATEGORIES_BY_GROUP.desejos, CATEGORIES_BY_GROUP.guardar, CATEGORIES_BY_GROUP.outros);
+    select.innerHTML = all.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+  }
+  function setFlowCategory(cat) {
+    populateFlowCategorySelect();
+    document.getElementById('flow-category').value = cat;
+    flowCategoryGroup = CATEGORY_GROUP[cat] || 'outros';
+    renderCategoryPicker();
+  }
+  function renderCategoryPicker() {
+    populateFlowCategorySelect();
+    document.querySelectorAll('#cat-group-seg button').forEach(b => b.classList.toggle('active', b.dataset.catGroup === flowCategoryGroup));
+    const grid = document.getElementById('cat-picker-grid');
+    const current = document.getElementById('flow-category').value;
+    const cats = CATEGORIES_BY_GROUP[flowCategoryGroup] || [];
+    grid.innerHTML = cats.map(c => `
+      <button type="button" class="cat-chip ${c === current ? 'active' : ''}" data-cat-pick="${escapeHtml(c)}">
+        <span class="cat-chip-icon">${CATEGORY_ICON[c] || CATEGORY_ICON['Outros']}</span>
+        <span class="cat-chip-label">${escapeHtml(c)}</span>
+      </button>
+    `).join('');
+    grid.querySelectorAll('[data-cat-pick]').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('flow-category').value = b.dataset.catPick;
+      renderCategoryPicker();
+    }));
+  }
+  document.querySelectorAll('#cat-group-seg button').forEach(b => {
+    b.addEventListener('click', () => {
+      flowCategoryGroup = b.dataset.catGroup;
+      renderCategoryPicker();
+    });
+  });
+  renderCategoryPicker();
+
   document.querySelectorAll('#flow-type-seg button').forEach(b => {
     b.addEventListener('click', () => {
       flowType = b.dataset.type;
@@ -4944,7 +5128,7 @@
     // Lembra a última forma de pagamento e categoria usadas, pra agilizar o
     // próximo lançamento (ex.: várias compras seguidas no mesmo cartão).
     document.getElementById('flow-payment').value = state.lastFlowPayment || 'debito';
-    document.getElementById('flow-category').value = state.lastFlowCategory || 'Outros';
+    setFlowCategory(state.lastFlowCategory || 'Outros');
     renderFlowAccountOptions();
     const accSel = document.getElementById('flow-account');
     if (state.lastFlowAccount && state.accounts.some(a => a.id === state.lastFlowAccount)) accSel.value = state.lastFlowAccount;
@@ -5064,10 +5248,11 @@
       const paymentMethod = r.paymentMethod || 'pix';
       const paymentLabel = paymentMethodLabel(paymentMethod) || 'Pix';
       const paymentBadge = `${paymentIconHtml(paymentMethod)} `;
+      const catIcon = categoryIconHtml(r.category || 'Outros') + ' ';
       rowsHtml += `
         <div class="row">
           <div class="row-main">
-            <div class="row-title">${escapeHtml(r.description)}</div>
+            <div class="row-title">${catIcon}${escapeHtml(r.description)}</div>
             <div class="row-sub">Conta fixa${r.category ? ' · ' + escapeHtml(r.category) : ''} · ${r.frequency === 'quinzenal' ? 'toda quinzena' : 'uma vez no mês'} · ${paymentBadge}${escapeHtml(paymentLabel)}</div>
           </div>
           <div class="row-value expense">- ${currency.format(r.amount)}</div>
@@ -5079,24 +5264,30 @@
       rowsHtml += `
         <div class="row">
           <div class="row-main">
-            <div class="row-title">${escapeHtml(i.description)}</div>
+            <div class="row-title">${cardLogoHtml(i.card)} ${escapeHtml(i.description)}</div>
             <div class="row-sub">Parcela · restam ${remaining} de ${i.totalInstallments}</div>
           </div>
           <div class="row-value expense">- ${currency.format(i.installmentValue)}</div>
         </div>
       `;
     });
-    filtered.slice().reverse().forEach(t => {
+    // Monta o HTML de um único lançamento avulso (mesmo trecho de antes,
+    // agora numa função à parte pra poder ser reaproveitado tanto sozinho
+    // quanto dentro de um grupo de compras com a mesma descrição).
+    function singleTxRowHtml(t, opts) {
+      opts = opts || {};
       const paymentMethod = t.paymentMethod || (t.type === 'expense' ? 'debito' : null);
       const paymentLabel = paymentMethod ? (paymentMethodLabel(paymentMethod) || 'Débito') : '';
-      const paymentBadge = paymentMethod && paymentMethod !== 'debito' ? `${paymentIconHtml(paymentMethod)} ` : '';
+      const paymentBadge = paymentMethod ? `${paymentIconHtml(paymentMethod)} ` : `${incomeIconHtml()} `;
+      const catIcon = (!opts.hideTitle && t.type === 'expense') ? categoryIconHtml(t.category || 'Outros') + ' ' : '';
       const dateLabel = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' · ' : '';
       const isEditing = editingTxId === t.id;
-      rowsHtml += `
+      const titleLine = opts.hideTitle ? '' : `<div class="row-title">${catIcon}${escapeHtml(t.description)}</div>`;
+      return `
         <div class="row ${isEditing ? 'actions-open' : ''}">
           <div class="row-main">
-            <div class="row-title">${escapeHtml(t.description)}</div>
-            <div class="row-sub">${dateLabel}${t.type === 'expense' ? escapeHtml(t.category || 'Outros') + ' · ' + paymentBadge + escapeHtml(paymentLabel) : (t.isInvestment ? 'Receita · Investimento' : 'Receita')}</div>
+            ${titleLine}
+            <div class="row-sub">${dateLabel}${t.type === 'expense' ? escapeHtml(t.category || 'Outros') + ' · ' + paymentBadge + escapeHtml(paymentLabel) : (paymentBadge + (t.isInvestment ? 'Receita · Investimento' : 'Receita'))}</div>
             <div class="row-actions">
               ${isEditing ? `
                 <div class="pl-pay-row" style="width:100%; margin:0;">
@@ -5110,6 +5301,45 @@
             </div>
           </div>
           <div class="row-value ${t.type}">${t.type === 'expense' ? '-' : '+'} ${currency.format(t.amount)}</div>
+        </div>
+      `;
+    }
+
+    // Agrupa lançamentos avulsos com a mesma descrição (e mesmo tipo,
+    // despesa ou receita): no histórico aparece uma linha só com o total
+    // gasto naquele nome de compra, e abrindo (clicando) dá pra ver e mexer
+    // em cada compra individual daquele grupo, sem perder nada — os
+    // lançamentos continuam salvos separados, isso é só a forma de mostrar.
+    const descGroups = new Map();
+    const descGroupOrder = [];
+    filtered.slice().reverse().forEach(t => {
+      const key = String(t.description || '').trim().toLowerCase() + '|' + t.type;
+      if (!descGroups.has(key)) { descGroups.set(key, []); descGroupOrder.push(key); }
+      descGroups.get(key).push(t);
+    });
+    descGroupOrder.forEach(key => {
+      const group = descGroups.get(key);
+      if (group.length === 1) {
+        rowsHtml += singleTxRowHtml(group[0]);
+        return;
+      }
+      const total = group.reduce((s, t) => s + t.amount, 0);
+      const type = group[0].type;
+      const catIcon = type === 'expense' ? categoryIconHtml(group[0].category || 'Outros') + ' ' : '';
+      rowsHtml += `
+        <div class="inst-row">
+          <details class="inst-details">
+            <summary class="inst-summary">
+              <div class="inst-top">
+                <div class="inst-name">${catIcon}${escapeHtml(group[0].description)}</div>
+                <div class="inst-count" style="color:var(${type === 'expense' ? '--negative' : '--accent'});">${type === 'expense' ? '-' : '+'} ${currency.format(total)}</div>
+              </div>
+              <div class="inst-sub">${group.length} compras com esse nome nesta quinzena</div>
+            </summary>
+            <div class="inst-expanded" style="padding:0;">
+              ${group.map(t => singleTxRowHtml(t, { hideTitle: true })).join('')}
+            </div>
+          </details>
         </div>
       `;
     });
@@ -5165,6 +5395,26 @@
     const txs = txForMonth(month);
     renderQuinzena('q1', txs, 'Nenhum lançamento até o dia 15 ainda.', month);
     renderQuinzena('q2', txs, 'Nenhum lançamento do dia 16 ao fim do mês ainda.', month);
+    renderFlowDescSuggestions();
+  }
+
+  // Autopreenchimento do campo Descrição: sugere os nomes de compra que você
+  // mais lançou até hoje, dos mais usados pros menos usados, pra digitar
+  // menos em compras repetidas (ex.: "Mercado", "Uber").
+  function renderFlowDescSuggestions() {
+    const list = document.getElementById('flow-desc-suggestions');
+    if (!list) return;
+    const counts = new Map();
+    state.transactions.forEach(t => {
+      const desc = (t.description || '').trim();
+      if (!desc) return;
+      counts.set(desc, (counts.get(desc) || 0) + 1);
+    });
+    const top = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 25)
+      .map(([desc]) => desc);
+    list.innerHTML = top.map(desc => `<option value="${escapeHtml(desc)}"></option>`).join('');
   }
 
   // ---------- GOALS ----------
@@ -6095,6 +6345,31 @@
       Grupo: ACCOUNT_GROUPS.find(g => g.key === (i.group || 'necessidades')).label
     })));
     XLSX.utils.book_append_sheet(wb, instSheet, 'Parceladas');
+    // Contas fixas (aluguel, assinaturas, etc.) — antes não entravam no
+    // arquivo exportado, então sumiam numa migração/backup.
+    const fixedSheet = XLSX.utils.json_to_sheet(state.recurringExpenses.map(r => ({
+      Descricao: r.description,
+      Valor: r.amount,
+      Categoria: r.category || '',
+      FormaPagamento: PAYMENT_METHOD_LABEL[r.paymentMethod] || r.paymentMethod || '',
+      Frequencia: r.frequency === 'quinzenal' ? 'Quinzenal' : 'Mensal',
+      Quinzena: r.period === 'q1' ? '15' : (r.period === 'q2' ? '30' : '')
+    })));
+    XLSX.utils.book_append_sheet(wb, fixedSheet, 'ContasFixas');
+    // Empréstimos feitos no cartão (a receber de outra pessoa) — também
+    // faltavam no arquivo exportado.
+    const cardLoanSheet = XLSX.utils.json_to_sheet(state.cardLoans.map(c => ({
+      Pessoa: c.person, Descricao: c.description || '', Valor: c.amount,
+      Cartao: CARD_META[c.card || 'nubank'], Vencimento: c.dueDate || '',
+      TotalParcelas: c.totalInstallments || 1, ParcelasPagas: c.paidInstallments || 0
+    })));
+    XLSX.utils.book_append_sheet(wb, cardLoanSheet, 'EmprestimosCartao');
+    // Empréstimos pessoais (dinheiro emprestado a alguém, fora do cartão).
+    const personLoanSheet = XLSX.utils.json_to_sheet(state.personLoans.map(p => ({
+      Pessoa: p.person, Descricao: p.description || '', Valor: p.amount,
+      DataRecebimento: p.dateReceived || ''
+    })));
+    XLSX.utils.book_append_sheet(wb, personLoanSheet, 'EmprestimosPessoais');
     return wb;
   }
 
@@ -6104,6 +6379,9 @@
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Mes', 'Quinzena', 'Tipo', 'Descricao', 'Valor', 'Categoria']]), 'Lancamentos');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Nome', 'ValorAlvo', 'ValorAtual']]), 'Metas');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Descricao', 'ValorParcela', 'TotalParcelas', 'ParcelasPagas', 'Vencimento (15 ou 30)', 'Cartao (Nubank/Santander/Santander 2)', 'Grupo (Necessidades/Desejos/Investimento)']]), 'Parceladas');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Descricao', 'Valor', 'Categoria', 'FormaPagamento (Debito/Pix/Dinheiro/Cartao X)', 'Frequencia (Mensal/Quinzenal)', 'Quinzena (15 ou 30, só se Mensal)']]), 'ContasFixas');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Pessoa', 'Descricao', 'Valor', 'Cartao (Nubank/Santander/Santander 2)', 'Vencimento', 'TotalParcelas', 'ParcelasPagas']]), 'EmprestimosCartao');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Pessoa', 'Descricao', 'Valor', 'DataRecebimento']]), 'EmprestimosPessoais');
     return wb;
   }
 
@@ -6137,7 +6415,10 @@
         const txSheet = wb.Sheets['Lancamentos'];
         const goalSheet = wb.Sheets['Metas'];
         const instSheet = wb.Sheets['Parceladas'];
-        if (!accSheet && !txSheet && !goalSheet && !instSheet) {
+        const fixedSheet = wb.Sheets['ContasFixas'];
+        const cardLoanSheet = wb.Sheets['EmprestimosCartao'];
+        const personLoanSheet = wb.Sheets['EmprestimosPessoais'];
+        if (!accSheet && !txSheet && !goalSheet && !instSheet && !fixedSheet && !cardLoanSheet && !personLoanSheet) {
           showToast('Não encontrei as abas esperadas (Contas, Lancamentos, Metas) nessa planilha. Baixe o modelo para conferir o formato.', true);
           return;
         }
@@ -6184,6 +6465,61 @@
             group: normalizeAccountGroup(r.Grupo || r['Grupo (Necessidades/Desejos/Investimento)'])
           })) : [];
 
+        // Converte o texto da coluna "FormaPagamento" (ex.: "Débito", "Cartão
+        // Nubank") de volta para a chave interna usada pelo app.
+        function normalizePaymentMethodText(str) {
+          const s = norm(str);
+          if (!s) return 'pix';
+          if (s.includes('nubank')) return 'nubank';
+          if (s.includes('santander') && /2/.test(s)) return 'santander2';
+          if (s.includes('santander')) return 'santander';
+          if (s.includes('debit')) return 'debito';
+          if (s.includes('dinheiro')) return 'dinheiro';
+          return 'pix';
+        }
+
+        const importedFixed = fixedSheet ? XLSX.utils.sheet_to_json(fixedSheet, { defval: '' })
+          .filter(r => String(r.Descricao || '').trim())
+          .map(r => {
+            const freq = norm(r.Frequencia).startsWith('quinz') ? 'quinzenal' : 'mensal';
+            const quinzena = String(r.Quinzena || '').trim() === '30' ? 'q2' : 'q1';
+            return {
+              id: uid(),
+              description: String(r.Descricao).trim(),
+              amount: Number(r.Valor) || 0,
+              category: r.Categoria ? String(r.Categoria).trim() : null,
+              paymentMethod: normalizePaymentMethodText(r.FormaPagamento || r['FormaPagamento (Debito/Pix/Dinheiro/Cartao X)']),
+              frequency: freq,
+              period: freq === 'mensal' ? quinzena : null,
+              valueChanges: []
+            };
+          }) : [];
+
+        const importedCardLoans = cardLoanSheet ? XLSX.utils.sheet_to_json(cardLoanSheet, { defval: '' })
+          .filter(r => String(r.Pessoa || '').trim())
+          .map(r => ({
+            id: uid(),
+            person: String(r.Pessoa).trim(),
+            description: r.Descricao ? String(r.Descricao).trim() : '',
+            amount: Number(r.Valor) || 0,
+            card: normalizeCard(r.Cartao || r['Cartao (Nubank/Santander/Santander 2)']),
+            dueDate: String(r.Vencimento || '').trim(),
+            totalInstallments: Math.max(1, parseInt(r.TotalParcelas, 10) || 1),
+            paidInstallments: Math.max(0, parseInt(r.ParcelasPagas, 10) || 0),
+            payments: []
+          })) : [];
+
+        const importedPersonLoans = personLoanSheet ? XLSX.utils.sheet_to_json(personLoanSheet, { defval: '' })
+          .filter(r => String(r.Pessoa || '').trim())
+          .map(r => ({
+            id: uid(),
+            person: String(r.Pessoa).trim(),
+            description: r.Descricao ? String(r.Descricao).trim() : '',
+            amount: Number(r.Valor) || 0,
+            dateReceived: String(r.DataRecebimento || '').trim() || new Date().toISOString().slice(0, 10),
+            payments: []
+          })) : [];
+
         // Compara cada item importado com o que já existe (por nome/descrição + principais campos)
         // e só adiciona o que ainda não está cadastrado, sem apagar ou duplicar nada.
         const existingAccKeys = new Set(state.accounts.map(a => `${norm(a.name)}|${norm(a.bank)}`));
@@ -6198,17 +6534,29 @@
         const existingInstKeys = new Set(state.installments.map(i => `${norm(i.description)}|${Number(i.installmentValue).toFixed(2)}|${i.totalInstallments}|${i.card}`));
         const newInstallments = importedInstallments.filter(i => !existingInstKeys.has(`${norm(i.description)}|${Number(i.installmentValue).toFixed(2)}|${i.totalInstallments}|${i.card}`));
 
+        const existingFixedKeys = new Set(state.recurringExpenses.map(r => `${norm(r.description)}|${Number(r.amount).toFixed(2)}|${r.frequency}`));
+        const newFixed = importedFixed.filter(r => !existingFixedKeys.has(`${norm(r.description)}|${Number(r.amount).toFixed(2)}|${r.frequency}`));
+
+        const existingCardLoanKeys = new Set(state.cardLoans.map(c => `${norm(c.person)}|${norm(c.description)}|${Number(c.amount).toFixed(2)}|${c.card}`));
+        const newCardLoans = importedCardLoans.filter(c => !existingCardLoanKeys.has(`${norm(c.person)}|${norm(c.description)}|${Number(c.amount).toFixed(2)}|${c.card}`));
+
+        const existingPersonLoanKeys = new Set(state.personLoans.map(p => `${norm(p.person)}|${norm(p.description)}|${Number(p.amount).toFixed(2)}`));
+        const newPersonLoans = importedPersonLoans.filter(p => !existingPersonLoanKeys.has(`${norm(p.person)}|${norm(p.description)}|${Number(p.amount).toFixed(2)}`));
+
         state.accounts = state.accounts.concat(newAccounts);
         state.transactions = state.transactions.concat(newTx);
         state.goals = state.goals.concat(newGoals);
         state.installments = state.installments.concat(newInstallments);
+        state.recurringExpenses = state.recurringExpenses.concat(newFixed);
+        state.cardLoans = state.cardLoans.concat(newCardLoans);
+        state.personLoans = state.personLoans.concat(newPersonLoans);
         save();
         renderAll();
-        const addedTotal = newAccounts.length + newTx.length + newGoals.length + newInstallments.length;
+        const addedTotal = newAccounts.length + newTx.length + newGoals.length + newInstallments.length + newFixed.length + newCardLoans.length + newPersonLoans.length;
         if (addedTotal === 0) {
           showToast('Nenhum item novo encontrado. Tudo que está nessa planilha já estava cadastrado.');
         } else {
-          showToast(`Importação concluída. Adicionados: ${newAccounts.length} conta(s), ${newTx.length} lançamento(s), ${newGoals.length} meta(s), ${newInstallments.length} conta(s) parcelada(s).`);
+          showToast(`Importação concluída. Adicionados: ${newAccounts.length} conta(s), ${newTx.length} lançamento(s), ${newGoals.length} meta(s), ${newInstallments.length} parcelada(s), ${newFixed.length} conta(s) fixa(s), ${newCardLoans.length + newPersonLoans.length} empréstimo(s).`);
         }
       } catch (err) {
         showToast('Não foi possível ler essa planilha. Confira se ela segue o formato do modelo baixado.', true);
@@ -6435,15 +6783,15 @@
       if (appLockEl) appLockEl.style.display = 'flex';
       const input = document.getElementById('lock-password-input');
       if (input) input.focus();
-    }, 3800);
+    }, 1900);
   } else {
     renderAll();
     renderExportReminder();
     // Esconde a tela de carregamento (splash) depois que o app já renderizou,
-    // com um tempo mínimo pra dar tempo de ver a moeda girando (dobrado de
-    // novo a pedido: era 1200ms, depois 2600ms, agora 5200ms).
+    // com um tempo mínimo pra dar tempo de ver a moeda girando (histórico:
+    // 1200ms, depois 2600ms, depois 5200ms, agora reduzido à metade: 2600ms).
     if (appSplashEl) {
-      setTimeout(() => { appSplashEl.classList.add('hidden'); }, 5200);
+      setTimeout(() => { appSplashEl.classList.add('hidden'); }, 2600);
     }
   }
 })();
@@ -6488,7 +6836,7 @@
     var fill = document.querySelector('.splash-progress-fill');
     var dots = document.querySelector('.splash-coin-dots');
     if (!fill && !dots) return;
-    var DURATION_MS = 5600;
+    var DURATION_MS = 2800;
     var t0 = performance.now();
     function frame() {
       var t = Math.min((performance.now() - t0) / DURATION_MS, 1);
@@ -6881,7 +7229,7 @@
 
     // ---------- giro contínuo, sem parar (aqui é a tela de abertura, sem controles) ----------
     var clock = new THREE.Clock();
-    var spinSpeed = reduceMotion ? 0.12 : 0.95;
+    var spinSpeed = reduceMotion ? 0.24 : 1.90;
 
     var rafId = null;
     function animate() {
