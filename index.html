@@ -1706,6 +1706,49 @@
     border-color: rgba(255, 107, 107, 0.6);
     background: #2a1420;
   }
+
+  /* ===== Ajustes: abas roláveis, lista de sugestões própria, projetos ===== */
+  .tabbar { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tab-btn { flex: 1 0 auto; padding-left: 10px; padding-right: 10px; font-size: 0.78rem; white-space: nowrap; }
+  .combo { position: relative; }
+  .combo-list {
+    display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60;
+    max-height: min(320px, 46vh); overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  .combo-list.open { display: block; }
+  .combo-empty { padding: 12px; color: var(--muted); font-size: 0.85rem; }
+  .combo-item { border-bottom: 1px solid var(--border); }
+  .combo-item:last-child { border-bottom: none; }
+  .combo-row { display: flex; align-items: stretch; }
+  .combo-pick {
+    flex: 1; min-width: 0; text-align: left; background: none; border: none; color: var(--ink);
+    font-family: inherit; font-size: 0.95rem; padding: 11px 12px; cursor: pointer;
+  }
+  .combo-pick small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+  .combo-total { align-self: center; font-weight: 700; font-size: 0.85rem; font-variant-numeric: tabular-nums; padding-right: 4px; }
+  .combo-chevron {
+    background: none; border: none; color: var(--muted); font-size: 0.85rem; width: 42px; cursor: pointer; font-family: inherit;
+  }
+  .combo-more { padding: 4px 12px 12px; }
+  .combo-tx { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; color: var(--muted); padding: 4px 0; }
+  .combo-tx span:last-child { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .combo-tools { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .combo-tools button, .combo-create {
+    background: var(--bg); border: 1px solid var(--border); color: var(--ink); border-radius: 8px;
+    padding: 8px 12px; font-family: inherit; font-size: 0.8rem; cursor: pointer;
+  }
+  .combo-tools button.danger { color: var(--negative); border-color: var(--negative); }
+  .combo-create { width: 100%; text-align: left; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 12px; color: var(--accent); font-weight: 600; }
+  .combo-edit { display: flex; gap: 6px; padding: 10px 12px; align-items: center; }
+  .combo-edit input { flex: 1; min-width: 0; }
+  .proj-cat { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); padding: 3px 0; }
+  .proj-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .proj-tools button { background: var(--bg); border: 1px solid var(--border); color: var(--ink); border-radius: 8px; padding: 9px 12px; font-family: inherit; font-size: 0.8rem; cursor: pointer; }
+  .proj-tools button.danger { color: var(--negative); border-color: var(--negative); }
+  .proj-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; background: var(--border); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -1876,18 +1919,7 @@
       <div class="form-card" id="account-form">
         <div>
           <label for="acc-name">Nome da conta</label>
-          <input id="acc-name" type="text" placeholder="Ex.: Conta corrente" list="acc-name-options" autocomplete="off">
-          <datalist id="acc-name-options">
-            <option value="Conta corrente">
-            <option value="Poupança">
-            <option value="Carteira digital">
-            <option value="Dinheiro em espécie">
-            <option value="Nubank">
-            <option value="Vale-alimentação">
-            <option value="Vale-refeição">
-            <option value="Investimentos">
-            <option value="Reserva de emergência">
-          </datalist>
+          <input id="acc-name" type="text" placeholder="Ex.: Conta corrente" autocomplete="off">
         </div>
         <div>
           <label for="acc-bank">Banco / instituição</label>
@@ -2034,8 +2066,11 @@
         </div>
         <div>
           <label for="flow-desc">Descrição <span style="color:var(--muted); font-weight:400;">(opcional)</span></label>
-          <input id="flow-desc" type="text" placeholder="Ex.: Supermercado" list="flow-desc-suggestions" autocomplete="off">
-          <datalist id="flow-desc-suggestions"></datalist>
+          <input id="flow-desc" type="text" placeholder="Ex.: Supermercado" autocomplete="off">
+        </div>
+        <div id="flow-project-wrap">
+          <label for="flow-project">Projeto <span style="color:var(--muted); font-weight:400;">(opcional)</span></label>
+          <select id="flow-project"></select>
         </div>
         <details id="flow-advanced">
           <summary style="cursor:pointer; color:var(--muted); font-size:0.82rem; margin:4px 0;">Data (opcional)</summary>
@@ -2170,6 +2205,26 @@
     </section>
 
     <!-- GOALS -->
+    <section id="tab-projects" class="tab-panel">
+      <h2 class="section-title" style="margin-top:4px;">Projetos</h2>
+      <p style="color:var(--muted); font-size:0.82rem; line-height:1.5; margin:0 0 8px;">
+        Crie um projeto (ex.: Reforma da casa). Ao lançar uma despesa no Fluxo, escolha o projeto e ela entra aqui, para você ver exatamente quanto gastou em cada um. Toque no projeto para ver as despesas.
+      </p>
+      <div id="projects-summary" style="font-size:0.85rem; color:var(--muted); margin:0 0 8px;"></div>
+      <div id="projects-list"></div>
+      <button class="add-btn" id="show-project-form">+ Novo projeto</button>
+      <div class="form-card" id="project-form">
+        <div>
+          <label for="project-name">Nome do projeto</label>
+          <input id="project-name" type="text" placeholder="Ex.: Reforma da casa" autocomplete="off">
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancel-project">Cancelar</button>
+          <button type="button" class="save" id="save-project">Salvar</button>
+        </div>
+      </div>
+    </section>
+
     <section id="tab-goals" class="tab-panel">
       <h2 class="section-title" style="margin-top:4px;">Metas</h2>
       <div id="goals-list"></div>
@@ -2358,6 +2413,7 @@
     <button class="tab-btn active" data-tab="overview">Geral</button>
     <button class="tab-btn" data-tab="accounts">Contas</button>
     <button class="tab-btn" data-tab="flow">Fluxo</button>
+    <button class="tab-btn" data-tab="projects">Projetos</button>
     <button class="tab-btn" data-tab="goals">Metas</button>
     <button class="tab-btn" data-tab="loans">Empréstimos</button>
     <button class="tab-btn" data-tab="data">Dados</button>
@@ -3132,8 +3188,11 @@
     });
   }
 
-  let state = { accounts: [], transactions: [], benefitEntries: [], benefitFixedDeposits: {}, goals: [], recurringIncomes: [], recurringExpenses: [], installments: [], cardLoans: [], cardSettings: {}, personLoans: [], lastFlowPayment: 'debito', lastFlowCategory: 'Outros', budgetReferenceValue: 5750, paidCardInvoices: {} };
+  let state = { projects: [], descriptions: [], hiddenDescriptions: [], accounts: [], transactions: [], benefitEntries: [], benefitFixedDeposits: {}, goals: [], recurringIncomes: [], recurringExpenses: [], installments: [], cardLoans: [], cardSettings: {}, personLoans: [], lastFlowPayment: 'debito', lastFlowCategory: 'Outros', budgetReferenceValue: 5750, paidCardInvoices: {} };
   function normalizeState() {
+    if (!Array.isArray(state.projects)) state.projects = [];
+    if (!Array.isArray(state.descriptions)) state.descriptions = [];
+    if (!Array.isArray(state.hiddenDescriptions)) state.hiddenDescriptions = [];
     if (!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
     if (!Array.isArray(state.recurringExpenses)) state.recurringExpenses = [];
     if (!Array.isArray(state.installments)) state.installments = [];
@@ -3223,18 +3282,17 @@
   // enquanto o teclado está aberto evita esse problema.
   const tabbarEl = document.querySelector('.tabbar');
   if (tabbarEl) {
+    // Só campos de texto/lista escondem a barra (caixinhas de marcar, não), e
+    // a barra some com "visibility" em vez de "display": assim ela continua
+    // ocupando o mesmo espaço e a tela NÃO pula pro início ao mexer nos botões.
+    const isTextField = (el) => el && el.matches && el.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]), select, textarea');
     document.addEventListener('focusin', (e) => {
-      if (e.target.matches && e.target.matches('input, select, textarea')) {
-        tabbarEl.style.display = 'none';
-      }
+      if (isTextField(e.target)) tabbarEl.style.visibility = 'hidden';
     });
     document.addEventListener('focusout', (e) => {
-      if (e.target.matches && e.target.matches('input, select, textarea')) {
+      if (isTextField(e.target)) {
         setTimeout(() => {
-          const active = document.activeElement;
-          if (!active || !active.matches || !active.matches('input, select, textarea')) {
-            tabbarEl.style.display = '';
-          }
+          if (!isTextField(document.activeElement)) tabbarEl.style.visibility = '';
         }, 60);
       }
     });
@@ -3247,6 +3305,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (tabbarEl) tabbarEl.scrollTo({ left: btn.offsetLeft - (tabbarEl.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
     });
   });
 
@@ -3255,7 +3314,7 @@
   const accountForm = document.getElementById('account-form');
   document.getElementById('show-account-form').addEventListener('click', () => {
     accountForm.classList.add('open');
-    document.getElementById('acc-name').focus();
+    document.getElementById('acc-name').focus({ preventScroll: true });
   });
   document.getElementById('cancel-account').addEventListener('click', () => {
     accountForm.classList.remove('open');
@@ -3410,7 +3469,7 @@
   });
   document.getElementById('show-installment-form').addEventListener('click', () => {
     installmentForm.classList.add('open');
-    document.getElementById('inst-desc').focus();
+    document.getElementById('inst-desc').focus({ preventScroll: true });
   });
   document.getElementById('cancel-installment').addEventListener('click', resetInstallmentForm);
   function resetInstallmentForm() {
@@ -4113,7 +4172,7 @@
   });
   document.getElementById('show-cardloan-form').addEventListener('click', () => {
     cardLoanForm.classList.add('open');
-    document.getElementById('cl-person').focus();
+    document.getElementById('cl-person').focus({ preventScroll: true });
   });
   document.getElementById('cancel-cardloan').addEventListener('click', resetCardLoanForm);
   function resetCardLoanForm() {
@@ -4464,7 +4523,7 @@
   document.getElementById('show-personloan-form').addEventListener('click', () => {
     personLoanForm.classList.add('open');
     document.getElementById('pl-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('pl-person').focus();
+    document.getElementById('pl-person').focus({ preventScroll: true });
   });
   document.getElementById('cancel-personloan').addEventListener('click', resetPersonLoanForm);
   function resetPersonLoanForm() {
@@ -5153,7 +5212,7 @@
   document.getElementById('show-recurring-expense-form').addEventListener('click', () => {
     resetRecurringExpenseForm();
     recurringExpenseForm.classList.add('open');
-    document.getElementById('recurring-expense-desc').focus();
+    document.getElementById('recurring-expense-desc').focus({ preventScroll: true });
   });
   document.getElementById('cancel-recurring-expense').addEventListener('click', resetRecurringExpenseForm);
   function resetRecurringExpenseForm() {
@@ -5419,6 +5478,8 @@
       document.getElementById('flow-category-wrap').style.display = flowType === 'expense' ? 'block' : 'none';
       document.getElementById('flow-payment-wrap').style.display = flowType === 'expense' ? 'block' : 'none';
       document.getElementById('flow-income-type-wrap').style.display = flowType === 'income' ? 'block' : 'none';
+      document.getElementById('flow-project-wrap').style.display = flowType === 'expense' ? 'block' : 'none';
+      if (window.__flowDescCombo) window.__flowDescCombo.refresh();
       updateFlowAccountVisibility();
     });
   });
@@ -5426,11 +5487,14 @@
   document.getElementById('show-flow-form').addEventListener('click', () => {
     resetFlowForm();
     flowForm.classList.add('open');
-    document.getElementById('flow-value').focus();
+    document.getElementById('flow-value').focus({ preventScroll: true });
   });
   document.getElementById('cancel-flow').addEventListener('click', resetFlowForm);
   function resetFlowForm() {
     flowForm.classList.remove('open');
+    if (window.__flowDescCombo) window.__flowDescCombo.close();
+    renderFlowProjectOptions();
+    document.getElementById('flow-project').value = '';
     document.getElementById('flow-advanced').open = false;
     document.getElementById('flow-desc').value = '';
     document.getElementById('flow-value').value = '';
@@ -5485,8 +5549,15 @@
       category: flowType === 'expense' ? category : null,
       paymentMethod: flowType === 'expense' ? paymentMethod : null,
       accountId: accountId || null,
+      projectId: flowType === 'expense' ? (document.getElementById('flow-project').value || null) : null,
       isInvestment: flowType === 'income' && flowIncomeType === 'investimento'
     };
+    // Guarda o nome na lista de descrições e garante que ele apareça nela.
+    {
+      const dk = desc.trim().toLowerCase();
+      if (!state.descriptions.some(n => n.trim().toLowerCase() === dk)) state.descriptions.push(desc.trim());
+      state.hiddenDescriptions = state.hiddenDescriptions.filter(n => n.trim().toLowerCase() !== dk);
+    }
     state.transactions.push(newTx);
     if (flowType === 'expense') {
       state.lastFlowPayment = paymentMethod;
@@ -5594,12 +5665,14 @@
       const catIcon = (!opts.hideTitle && t.type === 'expense') ? categoryIconHtml(t.category || 'Outros') + ' ' : '';
       const dateLabel = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' · ' : '';
       const isEditing = editingTxId === t.id;
+      const txProj = t.projectId ? (state.projects || []).find(p => p.id === t.projectId) : null;
+      const projLabel = txProj ? ' · Projeto ' + escapeHtml(txProj.name) : '';
       const titleLine = opts.hideTitle ? '' : `<div class="row-title">${catIcon}${escapeHtml(t.description)}</div>`;
       return `
         <div class="row ${isEditing ? 'actions-open' : ''}">
           <div class="row-main">
             ${titleLine}
-            <div class="row-sub">${dateLabel}${t.type === 'expense' ? escapeHtml(t.category || 'Outros') + ' · ' + paymentBadge + escapeHtml(paymentLabel) : (paymentBadge + (t.isInvestment ? 'Receita · Investimento' : 'Receita'))}</div>
+            <div class="row-sub">${dateLabel}${t.type === 'expense' ? escapeHtml(t.category || 'Outros') + ' · ' + paymentBadge + escapeHtml(paymentLabel) + projLabel : (paymentBadge + (t.isInvestment ? 'Receita · Investimento' : 'Receita'))}</div>
             <div class="row-actions">
               ${isEditing ? `
                 <div class="pl-pay-row" style="width:100%; margin:0;">
@@ -5710,30 +5783,330 @@
     renderFlowDescSuggestions();
   }
 
-  // Autopreenchimento do campo Descrição: sugere os nomes de compra que você
-  // mais lançou até hoje, dos mais usados pros menos usados, pra digitar
-  // menos em compras repetidas (ex.: "Mercado", "Uber").
-  function renderFlowDescSuggestions() {
-    const list = document.getElementById('flow-desc-suggestions');
-    if (!list) return;
-    const counts = new Map();
-    state.transactions.forEach(t => {
-      const desc = (t.description || '').trim();
-      if (!desc) return;
-      counts.set(desc, (counts.get(desc) || 0) + 1);
+  // ---------- LISTA PRÓPRIA DE SUGESTÕES (substitui o <datalist> do navegador) ----------
+  // O datalist não abre direito no celular. Esta lista abre ao tocar no campo,
+  // funciona igual em todo aparelho e cabe na tela.
+  function attachCombo(input, render, onAction) {
+    const wrap = document.createElement('div');
+    wrap.className = 'combo';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const panel = document.createElement('div');
+    panel.className = 'combo-list';
+    wrap.appendChild(panel);
+    const api = {
+      panel, input,
+      open() { panel.innerHTML = render(input.value); panel.classList.add('open'); },
+      close() { panel.classList.remove('open'); },
+      refresh() { if (panel.classList.contains('open')) panel.innerHTML = render(input.value); }
+    };
+    input.addEventListener('focus', api.open);
+    input.addEventListener('click', api.open);
+    input.addEventListener('input', api.open);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Escape') api.close(); });
+    document.addEventListener('pointerdown', (e) => { if (!wrap.contains(e.target)) api.close(); });
+    // Evita que tocar na lista tire o foco do campo (exceto nos campos de edição).
+    panel.addEventListener('mousedown', (e) => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
+    panel.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-act]');
+      if (!btn || !onAction) return;
+      e.preventDefault();
+      onAction(btn.dataset.act, btn.dataset.key || '', btn, api);
     });
-    const top = Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 25)
-      .map(([desc]) => desc);
-    list.innerHTML = top.map(desc => `<option value="${escapeHtml(desc)}"></option>`).join('');
+    return api;
   }
+
+  // Nomes de conta sugeridos ao cadastrar uma conta nova.
+  const ACCOUNT_NAME_OPTIONS = ['Conta corrente', 'Poupança', 'Carteira digital', 'Dinheiro em espécie', 'Nubank', 'Vale-alimentação', 'Vale-refeição', 'Investimentos', 'Reserva de emergência'];
+  const accNameCombo = attachCombo(document.getElementById('acc-name'), (typed) => {
+    const t = String(typed || '').trim().toLowerCase();
+    const opts = ACCOUNT_NAME_OPTIONS.filter(n => !t || n.toLowerCase().includes(t));
+    if (!opts.length) return '';
+    return opts.map(n => `<div class="combo-item"><button type="button" class="combo-pick" data-act="pick" data-key="${escapeHtml(n)}">${escapeHtml(n)}</button></div>`).join('');
+  }, (act, key, btn, api) => {
+    if (act === 'pick') { api.input.value = key; api.close(); }
+  });
+
+  // Descrições do Novo lançamento: mesmo nome soma os valores (no mês que está
+  // aberto no Fluxo) e só mostra cada lançamento quando toca na setinha.
+  const descExpanded = new Set();
+  let descEditingKey = null;
+  let descDeletingKey = null;
+
+  function getDescGroups() {
+    const monthKey = monthSelect.value || currentMonthKey();
+    const hidden = new Set(state.hiddenDescriptions.map(n => n.trim().toLowerCase()));
+    const map = new Map();
+    const touch = (name) => {
+      const clean = String(name || '').trim();
+      if (!clean) return null;
+      const k = clean.toLowerCase();
+      if (!map.has(k)) map.set(k, { key: k, name: clean, txs: [], monthTxs: [] });
+      return map.get(k);
+    };
+    state.descriptions.forEach(touch);
+    state.transactions.forEach(t => {
+      if (t.type !== flowType) return;
+      const g = touch(t.description);
+      if (!g) return;
+      g.txs.push(t);
+      if (t.month === monthKey) g.monthTxs.push(t);
+    });
+    return Array.from(map.values())
+      .filter(g => !hidden.has(g.key))
+      .sort((x, y) => (y.monthTxs.length - x.monthTxs.length) || (y.txs.length - x.txs.length) || x.name.localeCompare(y.name, 'pt-BR'));
+  }
+
+  function renderDescList(typed) {
+    const t = String(typed || '').trim().toLowerCase();
+    const all = getDescGroups();
+    const groups = all.filter(g => !t || g.key.includes(t));
+    let html = '';
+    if (t && !all.some(g => g.key === t)) {
+      html += `<button type="button" class="combo-create" data-act="create" data-key="${escapeHtml(String(typed).trim())}">+ Criar descrição “${escapeHtml(String(typed).trim())}”</button>`;
+    }
+    if (!groups.length && !html) {
+      return '<div class="combo-empty">Nenhuma descrição ainda. Digite um nome e ele será criado ao salvar o lançamento.</div>';
+    }
+    const sign = flowType === 'expense' ? '-' : '+';
+    groups.forEach(g => {
+      const monthSum = g.monthTxs.reduce((s, x) => s + x.amount, 0);
+      const open = descExpanded.has(g.key);
+      const sub = `${g.monthTxs.length} neste mês · ${g.txs.length} no total`;
+      html += `<div class="combo-item">`;
+      if (descEditingKey === g.key) {
+        html += `<div class="combo-edit"><input type="text" id="desc-rename-input" value="${escapeHtml(g.name)}" autocomplete="off"><button type="button" class="combo-create" style="width:auto; border:1px solid var(--border); border-radius:8px;" data-act="rename-save" data-key="${escapeHtml(g.key)}">Salvar</button><button type="button" class="combo-create" style="width:auto; border:1px solid var(--border); border-radius:8px; color:var(--muted);" data-act="rename-cancel" data-key="${escapeHtml(g.key)}">Cancelar</button></div>`;
+      } else {
+        html += `<div class="combo-row">
+          <button type="button" class="combo-pick" data-act="pick" data-key="${escapeHtml(g.key)}">${escapeHtml(g.name)}<small>${sub}</small></button>
+          <span class="combo-total" style="color:${monthSum ? 'var(--ink)' : 'var(--muted)'};">${sign} ${currency.format(monthSum)}</span>
+          <button type="button" class="combo-chevron" aria-label="Ver lançamentos e opções" data-act="toggle" data-key="${escapeHtml(g.key)}">${open ? '▲' : '▼'}</button>
+        </div>`;
+        if (open) {
+          const list = g.txs.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+          html += `<div class="combo-more">`;
+          if (!list.length) html += `<div class="combo-tx"><span>Nenhum lançamento com esse nome ainda.</span></div>`;
+          list.slice(0, 30).forEach(x => {
+            const d = x.date ? new Date(x.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+            html += `<div class="combo-tx"><span>${d}${x.category ? ' · ' + escapeHtml(x.category) : ''}</span><span>${sign} ${currency.format(x.amount)}</span></div>`;
+          });
+          if (list.length > 30) html += `<div class="combo-tx"><span>… e mais ${list.length - 30}</span></div>`;
+          html += `<div class="combo-tools">
+            <button type="button" data-act="rename" data-key="${escapeHtml(g.key)}">Editar nome</button>
+            ${descDeletingKey === g.key
+              ? `<button type="button" class="danger" data-act="del-confirm" data-key="${escapeHtml(g.key)}">Confirmar: tirar da lista</button>`
+              : `<button type="button" class="danger" data-act="del" data-key="${escapeHtml(g.key)}">Apagar</button>`}
+          </div>`;
+          if (descDeletingKey === g.key) html += `<div class="combo-tx"><span>Os lançamentos já feitos continuam salvos; só o nome sai desta lista.</span></div>`;
+          html += `</div>`;
+        }
+      }
+      html += `</div>`;
+    });
+    return html;
+  }
+
+  function renameDescription(oldKey, newNameRaw) {
+    const newName = String(newNameRaw || '').trim();
+    if (!newName) { showToast('Digite um nome para a descrição.', true); return; }
+    let changed = 0;
+    state.transactions.forEach(t => {
+      if (String(t.description || '').trim().toLowerCase() === oldKey) { t.description = newName; changed++; }
+    });
+    const nk = newName.toLowerCase();
+    state.descriptions = state.descriptions.map(n => n.trim().toLowerCase() === oldKey ? newName : n)
+      .filter((n, i, arr) => arr.findIndex(m => m.trim().toLowerCase() === n.trim().toLowerCase()) === i);
+    if (!state.descriptions.some(n => n.trim().toLowerCase() === nk)) state.descriptions.push(newName);
+    state.hiddenDescriptions = state.hiddenDescriptions.filter(n => { const k = n.trim().toLowerCase(); return k !== oldKey && k !== nk; });
+    descExpanded.delete(oldKey);
+    descExpanded.add(nk);
+    const inp = document.getElementById('flow-desc');
+    if (inp.value.trim().toLowerCase() === oldKey) inp.value = newName;
+    descEditingKey = null;
+    save();
+    renderAll();
+    showToast(changed ? `Nome alterado em ${changed} lançamento(s).` : 'Nome alterado.');
+  }
+
+  window.__flowDescCombo = attachCombo(document.getElementById('flow-desc'), renderDescList, (act, key, btn, api) => {
+    if (act === 'pick') {
+      const g = getDescGroups().find(x => x.key === key);
+      api.input.value = g ? g.name : key;
+      api.close();
+    } else if (act === 'create') {
+      const name = key.trim();
+      if (name) {
+        if (!state.descriptions.some(n => n.trim().toLowerCase() === name.toLowerCase())) state.descriptions.push(name);
+        state.hiddenDescriptions = state.hiddenDescriptions.filter(n => n.trim().toLowerCase() !== name.toLowerCase());
+        save();
+        api.input.value = name;
+        showToast('Descrição criada.');
+      }
+      api.close();
+    } else if (act === 'toggle') {
+      if (descExpanded.has(key)) descExpanded.delete(key); else descExpanded.add(key);
+      descDeletingKey = null;
+      api.refresh();
+    } else if (act === 'rename') {
+      descEditingKey = key; descDeletingKey = null;
+      api.refresh();
+      const inp = document.getElementById('desc-rename-input');
+      if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+    } else if (act === 'rename-save') {
+      const inp = document.getElementById('desc-rename-input');
+      renameDescription(key, inp ? inp.value : '');
+    } else if (act === 'rename-cancel') {
+      descEditingKey = null; api.refresh();
+    } else if (act === 'del') {
+      descDeletingKey = key; api.refresh();
+    } else if (act === 'del-confirm') {
+      state.descriptions = state.descriptions.filter(n => n.trim().toLowerCase() !== key);
+      if (!state.hiddenDescriptions.some(n => n.trim().toLowerCase() === key)) state.hiddenDescriptions.push(key);
+      descExpanded.delete(key); descDeletingKey = null;
+      save();
+      api.refresh();
+      showToast('Descrição removida da lista.');
+    }
+  });
+
+  // Chamado a cada renderAll: mantém a lista aberta atualizada.
+  function renderFlowDescSuggestions() {
+    if (window.__flowDescCombo) window.__flowDescCombo.refresh();
+  }
+
+  // ---------- PROJETOS ----------
+  const projOpen = new Set();
+  let projEditingId = null;
+  let projDeletingId = null;
+  const projectForm = document.getElementById('project-form');
+
+  function renderFlowProjectOptions() {
+    const sel = document.getElementById('flow-project');
+    if (!sel) return;
+    const prev = sel.value;
+    const active = state.projects.filter(p => p.status !== 'done');
+    sel.innerHTML = '<option value="">' + (active.length ? 'Nenhum projeto' : 'Nenhum projeto (crie na aba Projetos)') + '</option>' +
+      active.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if (prev && active.some(p => p.id === prev)) sel.value = prev;
+  }
+
+  function renderProjects() {
+    const el = document.getElementById('projects-list');
+    if (!el) return;
+    const sumEl = document.getElementById('projects-summary');
+    if (!state.projects.length) {
+      el.innerHTML = '<div class="empty">Nenhum projeto ainda. Crie o primeiro abaixo.</div>';
+      sumEl.textContent = '';
+      return;
+    }
+    const grand = state.transactions.filter(t => t.type === 'expense' && t.projectId && state.projects.some(p => p.id === t.projectId)).reduce((s, t) => s + t.amount, 0);
+    sumEl.textContent = 'Total gasto em todos os projetos: ' + currency.format(grand);
+    const ordered = state.projects.slice().sort((a, b) => (a.status === 'done') - (b.status === 'done'));
+    el.innerHTML = ordered.map(p => {
+      const txs = state.transactions.filter(t => t.type === 'expense' && t.projectId === p.id)
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      const total = txs.reduce((s, t) => s + t.amount, 0);
+      const byCat = new Map();
+      txs.forEach(t => byCat.set(t.category || 'Outros', (byCat.get(t.category || 'Outros') || 0) + t.amount));
+      const catsHtml = Array.from(byCat.entries()).sort((a, b) => b[1] - a[1])
+        .map(([c, v]) => `<div class="proj-cat"><span>${escapeHtml(c)}</span><span>${currency.format(v)}</span></div>`).join('');
+      const txHtml = txs.map(t => {
+        const d = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+        return `<div class="combo-tx"><span>${d} · ${escapeHtml(t.description)}</span><span>- ${currency.format(t.amount)}</span></div>`;
+      }).join('');
+      const editing = projEditingId === p.id;
+      return `
+        <div class="inst-row">
+          <details class="inst-details" data-proj="${p.id}" ${projOpen.has(p.id) ? 'open' : ''}>
+            <summary class="inst-summary">
+              <div class="inst-top">
+                <div class="inst-name">${escapeHtml(p.name)}${p.status === 'done' ? '<span class="proj-badge">Concluído</span>' : ''}</div>
+                <div class="inst-count" style="color:var(--negative);">- ${currency.format(total)}</div>
+              </div>
+              <div class="inst-sub">${txs.length} despesa(s)</div>
+            </summary>
+            <div class="inst-expanded">
+              ${txs.length ? `<p class="inst-expanded-label">Por categoria</p>${catsHtml}<p class="inst-expanded-label">Despesas</p>${txHtml}` : '<p class="inst-expanded-label">Nenhuma despesa neste projeto ainda.</p>'}
+              ${editing ? `
+                <div class="combo-edit" style="padding:12px 0 0;"><input type="text" id="proj-rename-input" value="${escapeHtml(p.name)}" style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--ink); font-family:inherit; font-size:16px;">
+                <button type="button" class="primary" data-pact="rename-save" data-pid="${p.id}">Salvar</button></div>` : ''}
+              <div class="proj-tools">
+                ${p.status === 'done' ? '' : `<button type="button" data-pact="add" data-pid="${p.id}">+ Adicionar despesa</button>`}
+                <button type="button" data-pact="rename" data-pid="${p.id}">Renomear</button>
+                <button type="button" data-pact="status" data-pid="${p.id}">${p.status === 'done' ? 'Reabrir' : 'Marcar como concluído'}</button>
+                ${projDeletingId === p.id
+                  ? `<button type="button" class="danger" data-pact="del-confirm" data-pid="${p.id}">Confirmar exclusão</button>`
+                  : `<button type="button" class="danger" data-pact="del" data-pid="${p.id}">Excluir projeto</button>`}
+              </div>
+              ${projDeletingId === p.id ? '<p class="inst-expanded-label">As despesas continuam no Fluxo e no saldo; elas só deixam de estar ligadas a este projeto.</p>' : ''}
+            </div>
+          </details>
+        </div>`;
+    }).join('');
+    el.querySelectorAll('details[data-proj]').forEach(d => {
+      d.addEventListener('toggle', () => { if (d.open) projOpen.add(d.dataset.proj); else projOpen.delete(d.dataset.proj); });
+    });
+  }
+
+  document.getElementById('projects-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-pact]');
+    if (!btn) return;
+    const id = btn.dataset.pid;
+    const p = state.projects.find(x => x.id === id);
+    if (!p) return;
+    const act = btn.dataset.pact;
+    if (act === 'add') {
+      document.querySelector('.tab-btn[data-tab="flow"]').click();
+      document.querySelector('#flow-type-seg button[data-type="expense"]').click();
+      document.getElementById('show-flow-form').click();
+      renderFlowProjectOptions();
+      document.getElementById('flow-project').value = id;
+      flowForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (act === 'rename') {
+      projEditingId = id; renderProjects();
+      const inp = document.getElementById('proj-rename-input');
+      if (inp) { inp.focus({ preventScroll: true }); inp.select(); }
+    } else if (act === 'rename-save') {
+      const name = (document.getElementById('proj-rename-input').value || '').trim();
+      if (!name) { showToast('Digite um nome para o projeto.', true); return; }
+      p.name = name; projEditingId = null; save(); renderAll();
+    } else if (act === 'status') {
+      p.status = p.status === 'done' ? 'active' : 'done'; save(); renderAll();
+    } else if (act === 'del') {
+      projDeletingId = id; renderProjects();
+    } else if (act === 'del-confirm') {
+      state.transactions.forEach(t => { if (t.projectId === id) t.projectId = null; });
+      state.projects = state.projects.filter(x => x.id !== id);
+      projDeletingId = null; projOpen.delete(id);
+      save(); renderAll();
+      showToast('Projeto excluído.');
+    }
+  });
+  document.getElementById('show-project-form').addEventListener('click', () => {
+    projectForm.classList.add('open');
+    document.getElementById('project-name').focus({ preventScroll: true });
+  });
+  function resetProjectForm() {
+    projectForm.classList.remove('open');
+    document.getElementById('project-name').value = '';
+  }
+  document.getElementById('cancel-project').addEventListener('click', resetProjectForm);
+  document.getElementById('save-project').addEventListener('click', () => {
+    const name = document.getElementById('project-name').value.trim();
+    if (!name) { showToast('Digite o nome do projeto.', true); return; }
+    if (state.projects.some(p => p.name.trim().toLowerCase() === name.toLowerCase())) { showToast('Já existe um projeto com esse nome.', true); return; }
+    state.projects.push({ id: uid(), name, status: 'active', createdAt: toDateInputValue(new Date()) });
+    save();
+    resetProjectForm();
+    renderAll();
+    showToast('Projeto criado!');
+  });
 
   // ---------- GOALS ----------
   const goalForm = document.getElementById('goal-form');
   document.getElementById('show-goal-form').addEventListener('click', () => {
     goalForm.classList.add('open');
-    document.getElementById('goal-name').focus();
+    document.getElementById('goal-name').focus({ preventScroll: true });
   });
   document.getElementById('cancel-goal').addEventListener('click', resetGoalForm);
   function resetGoalForm() {
@@ -6521,6 +6894,7 @@
   }
 
   function renderAll() {
+    const keepScrollY = window.scrollY;
     renderAccounts();
     renderInstallments();
     renderPayoffSummary();
@@ -6533,6 +6907,10 @@
     renderDataPreview();
     renderCardSettings();
     refreshCardOptionLabels();
+    renderProjects();
+    renderFlowProjectOptions();
+    // Redesenhar as listas não pode fazer a tela voltar pro topo.
+    if (Math.abs(window.scrollY - keepScrollY) > 2) window.scrollTo(0, keepScrollY);
   }
 
   // ---------- CONFIGURAÇÃO DOS CARTÕES (últimos 4 dígitos, fechamento/vencimento) ----------
