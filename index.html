@@ -1790,6 +1790,22 @@
   .proj-tx-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .proj-tx-val { color: var(--ink); font-variant-numeric: tabular-nums; }
   .proj-untag { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 3px 10px; font-family: inherit; font-size: 0.7rem; cursor: pointer; }
+
+  /* ===== Ajustes 3: descrições em linhas, botões de projeto menores ===== */
+  .dbar-top { border-top: none; border-bottom: 1px solid var(--border); padding: 8px 10px; }
+  .dbar-top .dbtn { flex: 1; padding: 8px 6px; font-size: 0.78rem; }
+  .drow { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+    border: none; border-bottom: 1px solid var(--border); background: none; color: var(--ink); font-family: inherit; font-size: 0.95rem; cursor: pointer; text-align: left; }
+  .drow:last-child { border-bottom: none; }
+  .drow:active { background: var(--surface-2); }
+  .drow.on { background: rgba(0, 229, 255, 0.1); box-shadow: inset 3px 0 0 var(--accent); }
+  .drow-val { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .proj-actions { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pbtn { padding: 8px 6px; border-radius: 10px; font-size: 0.74rem; gap: 5px; }
+  .pbtn svg { width: 14px; height: 14px; }
+  .pbtn-main { padding: 12px 10px; border-radius: 14px; font-size: 0.84rem; gap: 8px; }
+  .pbtn-main svg { width: 17px; height: 17px; }
+  .proj-untag { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.5); background: rgba(255, 107, 107, 0.1); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -5956,17 +5972,17 @@
     const current = document.getElementById('flow-desc').value.trim().toLowerCase();
     let html = '';
     if (descMode === 'chips') {
-      html += `<div class="dchips">`;
-      if (!groups.length) html += `<div class="combo-empty">${all.length ? 'Nenhuma descrição com esse texto.' : 'Nenhuma descrição ainda. Toque em “+ Nova descrição”.'}</div>`;
-      groups.forEach(g => {
-        const monthSum = g.monthTxs.reduce((s, x) => s + x.amount, 0);
-        html += `<button type="button" class="dchip${g.key === current ? ' on' : ''}" data-act="pick" data-key="${escapeHtml(g.key)}">${escapeHtml(g.name)}${monthSum ? `<small>${currency.format(monthSum)}</small>` : ''}</button>`;
-      });
-      html += `</div>`;
+      // Barra de ações logo abaixo do campo; depois o formulário de nova
+      // descrição (se aberto) e por fim a lista simples de descrições.
+      html += `<div class="dbar dbar-top"><button type="button" class="dbtn dbtn-go" data-act="new">+ Nova descrição</button><button type="button" class="dbtn" data-act="manage">Gerenciar</button><button type="button" class="dbtn" data-act="close">Fechar</button></div>`;
       if (descCreating) {
         html += `<div class="combo-edit"><input type="text" id="desc-new-input" placeholder="Nome da nova descrição" value="${escapeHtml(String(typed || '').trim())}" autocomplete="off"><button type="button" class="dbtn dbtn-go" data-act="new-save">Criar</button><button type="button" class="dbtn" data-act="new-cancel">Cancelar</button></div>`;
       }
-      html += `<div class="dbar"><button type="button" class="dbtn dbtn-go" data-act="new">+ Nova descrição</button><button type="button" class="dbtn" data-act="manage">Gerenciar</button><button type="button" class="dbtn" data-act="close" style="margin-left:auto;">Fechar</button></div>`;
+      if (!groups.length) html += `<div class="combo-empty">${all.length ? 'Nenhuma descrição com esse texto.' : 'Nenhuma descrição ainda. Toque em “+ Nova descrição”.'}</div>`;
+      groups.forEach(g => {
+        const monthSum = g.monthTxs.reduce((s, x) => s + x.amount, 0);
+        html += `<button type="button" class="drow${g.key === current ? ' on' : ''}" data-act="pick" data-key="${escapeHtml(g.key)}"><span class="drow-name">${escapeHtml(g.name)}</span><span class="drow-val">${monthSum ? currency.format(monthSum) : ''}</span></button>`;
+      });
       return html;
     }
     // Modo gerenciar: soma por nome, setinha mostra cada lançamento, editar/apagar.
